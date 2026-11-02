@@ -177,6 +177,7 @@ async function mount(ctx: PageContext): Promise<void> {
     const img = doc.createElement('img');
     img.src = AVATAR_URL;
     img.alt = '';
+    img.addEventListener('error', () => { img.remove(); a.textContent = bot.slice(0, 1); a.title = bot; }, { once: true });
     a.append(img);
     return a;
   };

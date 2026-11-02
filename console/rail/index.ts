@@ -270,10 +270,12 @@ export function createRail(deps: RailDeps): Rail {
   const avatar = createAvatarControl({ doc, ui, signal, onError });
   const name = ui.h('button', 'rail-name');
   name.type = 'button';
-  name.title = S.renameTitle;
+  name.title = window.astrbotTerminal ? 'AstrBot' : S.renameTitle;
+  if (window.astrbotTerminal) name.disabled = true;
   const nameText = ui.h('span', 'rail-name-text', DEFAULT_NAME);
   const nameEdit = ui.h('span', 'rail-name-edit');
   nameEdit.setAttribute('aria-hidden', 'true');
+  nameEdit.hidden = !!window.astrbotTerminal;
   nameEdit.append(icon(doc, 'pencil'));
   name.append(nameText, nameEdit);
   const ident = ui.h('div', 'rail-ident');
@@ -382,6 +384,7 @@ export function createRail(deps: RailDeps): Rail {
   };
   // the name is `displayName` in Core's config; Enter or leaving the box saves it, Escape drops the edit
   name.addEventListener('click', () => {
+    if (window.astrbotTerminal) return;
     const field = ui.input({ value: shownName });
     field.className = 'field rail-rename';
     name.replaceWith(field);
@@ -410,6 +413,10 @@ export function createRail(deps: RailDeps): Rail {
     field.addEventListener('blur', () => finish(true), { signal });
   }, { signal });
   onNameSaved(setName, signal);
+  if (window.astrbotTerminal) {
+    const timer = setInterval(() => { void get<{ displayName?: unknown }>('/api/status', { signal }).then((value) => setName(value.displayName)).catch(() => {}); }, 5000);
+    signal.addEventListener('abort', () => clearInterval(timer), { once: true });
+  }
   void get<{ displayName?: unknown; loop?: { paused?: unknown } } | null>('/api/status', { signal }).then((st) => {
     setName(st?.displayName);
     paused = st?.loop?.paused === true;

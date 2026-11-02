@@ -46,7 +46,7 @@ export const S: Partial<typeof en> = {
       default: return `${b} 重重落地，摔暈了一會兒`;
     }
   },
-  figure: (kind: string, name: string, b: string): string => (kind === 'figure' ? `你將 ${b} 更換為「${name}」` : kind === 'dress' ? `你為 ${b} 更換了裝扮` : `「${name}」顯示失敗，已切換為 Coo`),
+  figure: (kind: string, name: string, b: string): string => (kind === 'figure' ? `你將 ${b} 更換為「${name}」` : kind === 'dress' ? `你為 ${b} 更換了裝扮` : `「${name}」顯示失敗，已切換為 Bot`),
 };
 
 export const STEP: Partial<typeof stepEn> = {

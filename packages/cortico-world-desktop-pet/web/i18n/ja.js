@@ -134,7 +134,7 @@ export default {
   // the dressing page: uninstalling figure packs
   'remove.label': '{name} をアンインストール',
   'remove.title': '{name} をアンインストールしますか？',
-  'remove.lead': 'このパックのファイルが削除されます。再び使うにはもう一度インポートしてください。ペットが使用中の場合は Coo に戻ります。',
+  'remove.lead': 'このパックのファイルが削除されます。再び使うにはもう一度インポートしてください。ペットが使用中の場合は Bot に戻ります。',
   'remove.go': 'アンインストール',
   'remove.failed': 'アンインストールに失敗しました',
   'remove.done': 'アンインストールしました：{name}',

@@ -22,7 +22,7 @@ export const S: Partial<typeof en> = {
   promptsTab: 'Шаблоны промптов',
   storageTab: 'Очистка данных',
   toolsTab: 'Инструменты',
-  memoryDesc: 'Файлы памяти, которые Coo пишет сам, и история каждого изменения.',
+  memoryDesc: 'Файлы памяти, которые Bot пишет сам, и история каждого изменения.',
   memoryTitle: 'Память',
   personaTitle: 'Персона',
   reloadTitle: 'Перезагрузить системный префикс?',

@@ -4,7 +4,7 @@ export const S: Partial<typeof en> = {
   // advanced/features/prompts/index.ts
   button: "Cancella conversazione e ricomincia",
   title: "Cancellare la conversazione attuale e ricominciare?",
-  body: "Salva le modifiche di questa pagina, cancella il contesto della conversazione attuale di Coo e ricomincia con il prompt di sistema aggiornato. La cancellazione è irreversibile. Memory e la personalità vengono mantenuti.",
+  body: "Salva le modifiche di questa pagina, cancella il contesto della conversazione attuale di Bot e ricomincia con il prompt di sistema aggiornato. La cancellazione è irreversibile. Memory e la personalità vengono mantenuti.",
   clearing: "Avvio della nuova conversazione…",
   cleared: "Nuova conversazione avviata",
   // release.ts

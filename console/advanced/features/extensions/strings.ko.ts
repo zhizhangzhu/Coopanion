@@ -68,7 +68,7 @@ export const S: Partial<typeof en> = {
   registrySave: '저장',
   registryHelp: '검색·업데이트·설치에 바로 적용됩니다. 비우면 기본값입니다.',
   registrySaved: (url: string) => `저장했습니다. 사용 중인 레지스트리: ${url}`,
-  noHitLines: ["이제 아무것도 없어, Coo!", "Coo? 왜 아무것도 없지?", "결국 아무것도 없네, Coo..."] as [string, string, string],
+  noHitLines: ["이제 아무것도 없어, Bot!", "Bot? 왜 아무것도 없지?", "결국 아무것도 없네, Bot..."] as [string, string, string],
   hitsElsewhere: (n: number) => `다른 필터를 빼면 ${n}개가 있습니다`,
   clearOtherFilters: '다른 필터 지우기',
   searchFailed: (msg: string) => `불러오지 못했습니다: ${msg}`,

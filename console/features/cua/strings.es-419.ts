@@ -2,9 +2,9 @@ import type { en } from './strings.ts';
 
 export const S: Partial<typeof en> = {
   title: 'Uso de la computadora',
-  enabled: 'Dejar que Coo use esta computadora',
+  enabled: 'Dejar que Bot use esta computadora',
   control: 'Permitir el mouse y el teclado',
-  controlHint: 'Si está desactivado, Coo solo puede mirar la pantalla.',
+  controlHint: 'Si está desactivado, Bot solo puede mirar la pantalla.',
   permission: 'Cuándo preguntarte',
   levels: { 'ask-each-turn': 'Cada turno', 'ask-before-acting': 'Antes de actuar', 'ask-once': 'Una vez', 'never-ask': 'Nunca' },
   levelHints: {
@@ -20,11 +20,11 @@ export const S: Partial<typeof en> = {
   saveFailed: (why: string) => `No se guardó: ${why}`,
   enabledLabel: 'Usar la computadora',
   controlLabel: 'Mouse y teclado',
-  riskTitle: '¿Dejar que Coo use esta computadora?',
-  riskLead: 'Al activarlo, Coo verá tu pantalla y usará tu mouse y tu teclado. ',
+  riskTitle: '¿Dejar que Bot use esta computadora?',
+  riskLead: 'Al activarlo, Bot verá tu pantalla y usará tu mouse y tu teclado. ',
   riskDanger: 'Esto puede ser muy peligroso',
   riskAfter: '; confirma que entiendes lo siguiente:',
-  risks: ['Las capturas de pantalla (que pueden mostrar contenido privado, como tus chats) se envían al servicio de modelos que usas', 'Coo puede hacer clic en el lugar equivocado, escribir mal o terminar en la ventana equivocada. Asegúrate siempre de poder ver y detener a Coo en cualquier momento.', 'No le encargues a Coo pagos, contraseñas ni nada que implique información sensible, acciones en el mundo real o que no se pueda deshacer.'],
-  riskNote: 'Coo se detiene solo cuando usas el mouse o el teclado. Puedes desactivar esta función en cualquier momento.',
+  risks: ['Las capturas de pantalla (que pueden mostrar contenido privado, como tus chats) se envían al servicio de modelos que usas', 'Bot puede hacer clic en el lugar equivocado, escribir mal o terminar en la ventana equivocada. Asegúrate siempre de poder ver y detener a Bot en cualquier momento.', 'No le encargues a Bot pagos, contraseñas ni nada que implique información sensible, acciones en el mundo real o que no se pueda deshacer.'],
+  riskNote: 'Bot se detiene solo cuando usas el mouse o el teclado. Puedes desactivar esta función en cualquier momento.',
   riskOk: 'Activar',
 };

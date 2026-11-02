@@ -6,10 +6,10 @@ const MAC = process.platform === 'darwin';
 const ja: Translation<CoreText> = {
   settings: {
     autoUpdate: { title: "自動更新", description: "更新を自動でダウンロードし、アプリ終了時にインストールします。オフにすると確認とダウンロードが直ちに止まり、ダウンロード済みの更新も自動ではインストールされません。" },
-    language: { title: '言語', description: '画面の表示と Coo の話す言葉にこの言語を使います。すぐに反映されます。' },
+    language: { title: '言語', description: '画面の表示と Bot の話す言葉にこの言語を使います。すぐに反映されます。' },
     telemetry: { title: '匿名の利用統計', description: '会話内容を含まない利用回数と設定を送信し、Coopanion の改善に役立てます。送信する項目は docs/TELEMETRY.md に記載されています。' },
     contextRing: { title: 'コンテキストリング', description: 'チャットページの入力欄に、以前の会話を整理するまでの残りを円で表示します。' },
-    roundsSoft: { title: 'まとめのリマインド', suffix: '回', description: '1 回のウェイクでモデルへのリクエストがこの回数に達すると、今の作業を片付けてターンを終えるよう Coo に促します。' },
+    roundsSoft: { title: 'まとめのリマインド', suffix: '回', description: '1 回のウェイクでモデルへのリクエストがこの回数に達すると、今の作業を片付けてターンを終えるよう Bot に促します。' },
     roundsHard: { title: '1 回のウェイクのリクエスト上限', suffix: '回', description: '1 回のウェイクでモデルにリクエストできる最大回数です。達するとターンが終わります。' },
   },
 
@@ -54,8 +54,8 @@ const ja: Translation<CoreText> = {
 
   guide: {
     sources: [['Steam', 'steam'], ['YouTube', 'youtube'], ['Reddit', 'reddit'], ['X', 'x'], ['Instagram', 'instagram'], ['TikTok', 'tiktok'], ['GitHub', 'github'], ['友だち', 'friend'], ['その他', 'other'], ['ないしょ', 'skip']],
-    hello: 'やっほー！ぼくは Coo。今日から画面のいちばん下に住むね、クー…',
-    helloReply: 'こんにちは、Coo！',
+    hello: 'やっほー！ぼくは Bot。今日から画面のいちばん下に住むね、クー…',
+    helloReply: 'こんにちは、Bot！',
     askName: 'なんて呼べばいい？',
     nameSend: 'そう呼んで',
     gotName: (name: string) => `${name}、覚えたよ！`,

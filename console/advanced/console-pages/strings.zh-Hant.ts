@@ -21,7 +21,7 @@ export const S: Partial<typeof en> = {
   promptsTab: '提示詞範本',
   storageTab: '資料清理',
   toolsTab: '工具表',
-  memoryDesc: 'Coo 自己寫下的記憶檔案，以及每次修改的紀錄。',
+  memoryDesc: 'Bot 自己寫下的記憶檔案，以及每次修改的紀錄。',
   memoryTitle: '記憶',
   personaTitle: '人格',
   reloadTitle: '重新載入 system 前綴？',

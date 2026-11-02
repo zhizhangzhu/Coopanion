@@ -139,7 +139,7 @@ export default {
   // 装扮页:卸载形象包
   'remove.label': '卸载「{name}」',
   'remove.title': '卸载「{name}」？',
-  'remove.lead': '这个形象包的文件会被删除，再次使用需要重新导入。桌宠正在使用它时会换回 Coo。',
+  'remove.lead': '这个形象包的文件会被删除，再次使用需要重新导入。桌宠正在使用它时会换回 Bot。',
   'remove.go': '卸载',
   'remove.failed': '卸载失败',
   'remove.done': '已卸载：{name}',

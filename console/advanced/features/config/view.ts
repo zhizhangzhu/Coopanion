@@ -601,7 +601,9 @@ export function createConfigView(deps: ConfigViewDeps): ConfigView {
           control.appendChild(line);
           let read: (() => ConfigValue) | null;
           let write: ((value: unknown) => void) | null;
-          if (prop.type === 'boolean') {
+          if (window.astrbotTerminal && ['displayName', 'timezone', 'worlds.desktop-pet.user'].includes(path)) {
+            const input = ui.input({ value: String((values || {})[path] ?? '') }); input.disabled = true; input.readOnly = true; input.dataset.astrbotManaged = path; input.title = 'AstrBot'; line.appendChild(input); read = null; write = null;
+          } else if (prop.type === 'boolean') {
             const box = ui.checkbox('', { checked: !!(values || {})[path], onChange: () => queueSave(group.id) });
             box.input.setAttribute('aria-label', prop.title || path);
             // companion-switchbox 把勾选框画成开关

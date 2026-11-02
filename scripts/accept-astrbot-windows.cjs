@@ -38,7 +38,7 @@ async function main() {
       if (message.type === 'catalog') revision = message.id;
       if (message.type === 'state' || message.type === 'hello') observedState = message.payload;
       if (message.type === 'query') {
-        const payload = message.payload.kind === 'persona' ? { text: 'This is an isolated acceptance fixture.' } : { items: [], more: false, before: 0 };
+        const payload = message.payload.kind === 'identity' ? { persona_id: 'Acceptance', bot_name: 'Acceptance', user_id: 'user-ci', user_name: 'Sample partner', timezone: 'Asia/Shanghai' } : message.payload.kind === 'persona' ? { text: 'This is an isolated acceptance fixture.' } : { items: [], more: false, before: 0 };
         peer.send(JSON.stringify(frame('query_result', message.id, payload)));
       }
       if (message.type === 'ping') peer.send(JSON.stringify(frame('pong', message.id, {})));
@@ -73,6 +73,7 @@ async function main() {
   await wait(() => evaluate('!!document.querySelector("#kernel-root") && !!window.astrbotTerminal'), 'Original UI did not initialize');
   await evaluate('location.hash="#/dress"'); await wait(() => evaluate('!!document.querySelector(".companion-dressframe[src]")'), 'Original dressing page failed');
   await evaluate('location.hash="#/pet"'); await wait(() => evaluate('document.querySelectorAll(".featureslot input").length>0'), 'Original habits page failed');
+  await wait(() => evaluate("document.querySelector('[data-astrbot-managed=\"bot_name\"]')?.value===\"Acceptance\" && document.querySelector('[data-astrbot-managed=\"user_name\"]')?.value===\"Sample partner\" && [...document.querySelectorAll(\"input[data-astrbot-managed]\")].every(e=>e.disabled)"), 'Shared identity must be server-synced and read-only');
   await evaluate('location.hash="#/chat"'); await wait(() => evaluate('!!document.querySelector(".chatview textarea")'), 'Original chat failed');
   await evaluate('document.querySelector(".chatview textarea").focus()');
   await cdp('Input.insertText', { text: 'Windows native acceptance' });

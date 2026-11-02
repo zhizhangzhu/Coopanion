@@ -22,7 +22,7 @@ export const S: Partial<typeof en> = {
   promptsTab: 'プロンプトテンプレート',
   storageTab: 'データの消去',
   toolsTab: 'ツール',
-  memoryDesc: 'Coo が自分で書いた記憶ファイルと、その変更の記録。',
+  memoryDesc: 'Bot が自分で書いた記憶ファイルと、その変更の記録。',
   memoryTitle: '記憶',
   personaTitle: 'ペルソナ',
   reloadTitle: 'システムプレフィックスを再読み込みしますか？',

@@ -13,7 +13,7 @@ const zh = {
   // advanced/features/prompts/index.ts
   button: "清空对话并重开",
   title: "清空当前对话并重开？",
-  body: "将先保存本页修改，再清空 Coo 当前对话的上下文，使用更新后的系统提示词重新开始。清空无法撤销；Memory 和人设保留。",
+  body: "将先保存本页修改，再清空 Bot 当前对话的上下文，使用更新后的系统提示词重新开始。清空无法撤销；Memory 和人设保留。",
   clearing: "正在开始新对话…",
   cleared: "已开始新对话",
   // release.ts
@@ -32,7 +32,7 @@ export const en: typeof zh = {
   // advanced/features/prompts/index.ts
   button: "Clear conversation and restart",
   title: "Clear the current conversation and restart?",
-  body: "Save edits on this page, then clear Coo’s current conversation context and restart with the updated system prompt. Clearing cannot be undone. Memory and persona are kept.",
+  body: "Save edits on this page, then clear Bot’s current conversation context and restart with the updated system prompt. Clearing cannot be undone. Memory and persona are kept.",
   clearing: "Starting a new conversation…",
   cleared: "New conversation started",
   // release.ts

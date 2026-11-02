@@ -22,7 +22,7 @@ export const S: Partial<typeof en> = {
   promptsTab: 'Modelos de prompt',
   storageTab: 'Limpar dados',
   toolsTab: 'Ferramentas',
-  memoryDesc: 'Os arquivos de memória que o Coo escreve sozinho e o registro de cada alteração.',
+  memoryDesc: 'Os arquivos de memória que o Bot escreve sozinho e o registro de cada alteração.',
   memoryTitle: 'Memória',
   personaTitle: 'Persona',
   reloadTitle: 'Recarregar o prefixo de sistema?',

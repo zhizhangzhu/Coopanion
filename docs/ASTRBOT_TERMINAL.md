@@ -45,3 +45,7 @@ pnpm exec tsx scripts/pack.ts
 The output is `dist/AstrBot-Desktop-Pet-Setup-<version>.exe`. Its application ID is `io.github.zhizhangzhu.astrbot-coopanion`; source/protocol metadata records the build's Git commit and protocol v1. Releases belong to `zhizhangzhu/Coopanion`. Automatic self-update is disabled in terminal mode; install a new terminal package to upgrade. Pairing and settings survive reinstall and uninstall. Never include operator data in an installer.
 
 CI cannot establish the user's private Linux/Windows network route or replace acceptance against their actual server. That final pairing and ordinary conversation verification remain separate from the isolated fixture.
+
+## Shared identity
+
+The paired server supplies the Bot name, user address and timezone. Native configuration guards reject local overwrites, and the normal and advanced UI disable those fields. The last verified device-specific identity remains visible offline; a connected client refreshes it every 30 seconds without a model request. Desktop appearance, interaction and local UI language remain local settings. UI references to the companion use Bot.

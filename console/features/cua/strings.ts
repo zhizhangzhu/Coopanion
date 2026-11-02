@@ -11,7 +11,7 @@ import { S as ru } from './strings.ru.ts';
 
 const zh = {
   title: '电脑操作',
-  enabled: '让 Coo 操作这台电脑',
+  enabled: '让 Bot 操作这台电脑',
   control: '允许操作鼠标和键盘',
   controlHint: '关闭时只能查看屏幕。',
   permission: '询问时机',
@@ -30,20 +30,20 @@ const zh = {
   enabledLabel: '使用电脑',
   controlLabel: '鼠标与键盘',
   /** The dialog before computer use is turned on: `riskDanger` is drawn bold between `riskLead` and `riskAfter`, `risks` in red. */
-  riskTitle: '让 Coo 操作这台电脑？',
-  riskLead: '打开后，Coo 将会观察你的屏幕，操作你的鼠标和键盘。',
+  riskTitle: '让 Bot 操作这台电脑？',
+  riskLead: '打开后，Bot 将会观察你的屏幕，操作你的鼠标和键盘。',
   riskDanger: '这可能非常危险',
   riskAfter: '，请确认你理解以下内容：',
-  risks: ['屏幕截图（可能包含你的隐私内容，如聊天记录）将会发给上游模型服务', 'Coo 可能会点错地方、打错字，或者进入错误的窗口。时刻确保你能随时观察并打断 Coo。', '付款、密码一类涉及敏感信息、现实操作或无法撤回的操作，请不要交给 Coo。'] as string[],
-  riskNote: 'Coo 会在你操作鼠标或键盘时自动停止。你可以随时关闭这个功能。',
+  risks: ['屏幕截图（可能包含你的隐私内容，如聊天记录）将会发给上游模型服务', 'Bot 可能会点错地方、打错字，或者进入错误的窗口。时刻确保你能随时观察并打断 Bot。', '付款、密码一类涉及敏感信息、现实操作或无法撤回的操作，请不要交给 Bot。'] as string[],
+  riskNote: 'Bot 会在你操作鼠标或键盘时自动停止。你可以随时关闭这个功能。',
   riskOk: '打开',
 };
 
 export const en: typeof zh = {
   title: 'Computer use',
-  enabled: 'Let Coo use this computer',
+  enabled: 'Let Bot use this computer',
   control: 'Allow the mouse and keyboard',
-  controlHint: 'When off, Coo can only look at the screen.',
+  controlHint: 'When off, Bot can only look at the screen.',
   permission: 'When to ask you',
   levels: { 'ask-each-turn': 'Every turn', 'ask-before-acting': 'Before acting', 'ask-once': 'Once', 'never-ask': 'Never' },
   levelHints: {
@@ -59,12 +59,12 @@ export const en: typeof zh = {
   saveFailed: (why: string) => `Not saved: ${why}`,
   enabledLabel: 'Use the computer',
   controlLabel: 'Mouse and keyboard',
-  riskTitle: 'Let Coo use this computer?',
-  riskLead: 'Once this is on, Coo will watch your screen and use your mouse and keyboard. ',
+  riskTitle: 'Let Bot use this computer?',
+  riskLead: 'Once this is on, Bot will watch your screen and use your mouse and keyboard. ',
   riskDanger: 'This can be very dangerous',
   riskAfter: '; make sure you understand the following:',
-  risks: ['Screenshots, which may show private things such as your chats, are sent to the model service you use', 'Coo may click the wrong place, mistype, or end up in the wrong window. Always make sure you can watch and stop Coo at any time.', 'Do not hand Coo payments, passwords or anything else that involves sensitive information, real-world actions or cannot be undone.'],
-  riskNote: 'Coo stops automatically when you use the mouse or keyboard. You can turn this off at any time.',
+  risks: ['Screenshots, which may show private things such as your chats, are sent to the model service you use', 'Bot may click the wrong place, mistype, or end up in the wrong window. Always make sure you can watch and stop Bot at any time.', 'Do not hand Bot payments, passwords or anything else that involves sensitive information, real-world actions or cannot be undone.'],
+  riskNote: 'Bot stops automatically when you use the mouse or keyboard. You can turn this off at any time.',
   riskOk: 'Turn on',
 };
 

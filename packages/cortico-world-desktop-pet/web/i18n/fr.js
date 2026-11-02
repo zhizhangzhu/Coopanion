@@ -134,7 +134,7 @@ export default {
   // the dressing page: uninstalling figure packs
   'remove.label': 'Désinstaller {name}',
   'remove.title': 'Désinstaller {name} ?',
-  'remove.lead': "Les fichiers du pack sont supprimés ; importez-le à nouveau pour l'utiliser. Un compagnon qui porte ce pack redevient Coo.",
+  'remove.lead': "Les fichiers du pack sont supprimés ; importez-le à nouveau pour l'utiliser. Un compagnon qui porte ce pack redevient Bot.",
   'remove.go': 'Désinstaller',
   'remove.failed': 'Échec de la désinstallation',
   'remove.done': 'Désinstallé : {name}',

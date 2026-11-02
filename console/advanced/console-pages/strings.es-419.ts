@@ -22,7 +22,7 @@ export const S: Partial<typeof en> = {
   promptsTab: 'Plantillas de prompt',
   storageTab: 'Borrar datos',
   toolsTab: 'Herramientas',
-  memoryDesc: 'Los archivos de memoria que Coo escribe por sí mismo y el registro de cada cambio.',
+  memoryDesc: 'Los archivos de memoria que Bot escribe por sí mismo y el registro de cada cambio.',
   memoryTitle: 'Memoria',
   personaTitle: 'Persona',
   reloadTitle: '¿Recargar el prefijo del sistema?',

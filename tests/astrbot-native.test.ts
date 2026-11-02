@@ -21,8 +21,12 @@ it('serves original configuration, panels and chat while bypassing every local m
     expect((await get('/api/status')).astrbot).toMatchObject({ online: false, paired: false });
     const connection = await fetch(base+panelRoute('world:astrbot-ui','connection','status'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ args: [] }) });
     expect(connection.ok).toBe(true); expect(await connection.json()).toMatchObject({ online: false });
-    const config = await fetch(base+'/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ group: 'world:desktop-pet', values: { 'worlds.desktop-pet.user': 'Sample partner' } }) });
+    const config = await fetch(base+'/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ group: 'world:desktop-pet', values: { 'worlds.desktop-pet.roam': 'calm' } }) });
     expect(config.ok).toBe(true);
+    for (const [group, key] of [['core','displayName'],['core','timezone'],['world:desktop-pet','worlds.desktop-pet.user']]) {
+      const locked = await fetch(base+'/api/config', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({group,values:{[key!]: 'Local override'}}) });
+      expect(locked.ok).toBe(false); expect(await locked.text()).toContain(key === 'timezone' ? 'timezone' : 'astrbot_managed_setting');
+    }
     const received: Record<string, unknown>[] = []; runtime.bridge.onEvent = (event) => { received.push(event); };
     const model = vi.spyOn(runtime.bot.core.llm, 'respond');
     socket = new WebSocket(base.replace('http','ws')+panelStreamRoute('world:desktop-pet','chat')+'?language=zh', { headers: { Origin: base } });
