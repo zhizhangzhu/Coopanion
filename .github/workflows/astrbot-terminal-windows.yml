@@ -1,0 +1,50 @@
+name: AstrBot terminal Windows
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'app/terminal*'
+      - 'core/astrbot/**'
+      - 'core/terminal-boot.ts'
+      - 'packages/cortico-world-desktop-pet/**'
+      - 'scripts/pack.ts'
+      - 'electron-builder.terminal.yml'
+      - 'installer/terminal.nsh'
+      - '.github/workflows/astrbot-terminal-windows.yml'
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          submodules: recursive
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.11.0'
+      - run: npm install --global pnpm@11.28.6
+      - run: pnpm install --frozen-lockfile
+      - run: node node_modules/electron/install.js
+      - run: pnpm run build:cortico
+      - run: pnpm run test
+      - run: pnpm run test:worlds
+      - run: pnpm run typecheck
+      - run: pnpm run typecheck:web
+      - run: pnpm run typecheck:worlds
+      - run: pnpm exec tsx scripts/pack.ts
+        env:
+          COOPANION_TERMINAL: '1'
+          PACK_ARCH: x64
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: AstrBot-Desktop-Pet-Windows-x64
+          path: |
+            dist/AstrBot-Desktop-Pet-Setup-*.exe
+            dist/AstrBot-Desktop-Pet-Setup-*.exe.blockmap
+            dist/latest.yml
+          if-no-files-found: error
+          retention-days: 30

@@ -1,0 +1,18 @@
+# app/terminal.cjs: Windows-only AstrBot terminal; local credentials stay in AppData.
+extends: electron-builder.yml
+appId: io.github.zhizhangzhu.astrbot-coopanion
+productName: AstrBot Desktop Pet
+publish:
+  provider: github
+  owner: zhizhangzhu
+  repo: Coopanion
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+nsis:
+  include: installer/terminal.nsh
+  shortcutName: AstrBot Desktop Pet
+  createStartMenuShortcut: true
+  deleteAppDataOnUninstall: false
+  artifactName: AstrBot-Desktop-Pet-Setup-${version}.exe
