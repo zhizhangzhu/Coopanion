@@ -68,6 +68,8 @@ const DESCRIBE: WorldDescribe = {
 };
 
 export interface DesktopPetAssembly {
+  /** Wait for the renderer to confirm displayed speech and questions. */
+  confirmPresentation?: boolean;
   /** The bot's name as it is now, read at each use, so a rename needs no restart; the name at mount (`ctx.botName`) when absent. */
   botName?(): string;
   /** Run controls for the menu header; see `PetBotControls`. */
@@ -102,6 +104,7 @@ export function desktopPetDefinition(assembly: DesktopPetAssembly = {}): WorldDe
     // ctx.cfg is the live `worlds.desktop-pet` section: hot keys are read at use
     create: (ctx) => {
       const world = new DesktopPetWorld({
+        confirmPresentation: assembly.confirmPresentation,
         cfg: ctx.cfg,
         timezone: ctx.timezone,
         persist: (patch) => {

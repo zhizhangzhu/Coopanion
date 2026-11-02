@@ -116,6 +116,32 @@ describe('tools without a page', () => {
   });
 });
 
+describe('terminal presentation receipts', () => {
+  it('waits for the matching renderer receipt before confirming a speech presentation', async () => {
+    const { world } = await mounted(undefined, { confirmPresentation: true });
+    const page = await FakePage.open(origin(world)); cleanup.push(() => page.close());
+    let done = false;
+    const result = tool(world, 'pet_say').handler({ script: 'Hello from the terminal.' }, ctx).then((r) => { done = true; return r; });
+    const order = await page.next((m) => m.t === 'say');
+    expect(done).toBe(false);
+    page.send({ t: 'presented', id: 'unrelated' });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(done).toBe(false);
+    page.send({ t: 'presented', id: order.id });
+    expect(await result).toMatchObject({ presentationConfirmed: true });
+  });
+
+  it('does not confirm speech when the renderer disconnects', async () => {
+    const { world } = await mounted(undefined, { confirmPresentation: true });
+    const page = await FakePage.open(origin(world)); cleanup.push(() => page.close());
+    const result = tool(world, 'pet_say').handler({ script: 'A line awaiting display.' }, ctx);
+    const rejected = expect(result).rejects.toThrow('presentation_unconfirmed');
+    await page.next((m) => m.t === 'say');
+    await page.close();
+    await rejected;
+  });
+});
+
 describe('computer use', () => {
   it('switching it off ends the engine process, and the engine starts again when needed (two spawns)', async () => {
     const { world, cfg } = await mounted((c) => { c.cua.enabled = true; });

@@ -474,7 +474,7 @@ function stepDialog(dt) {
       if (it.beatDone && T < it.holdUntil) return;
       it.i++;
       it.beatDone = false;
-      if (it.i >= it.beats.length) { closeBubble(); return; }
+      if (it.i >= it.beats.length) { send({ t: 'presented', id: it.id }); closeBubble(); return; }
       const b = it.beats[it.i];
       let lead = 0;
       for (const a of b.actions || []) { acts.push(a); lead = .45; }
@@ -495,7 +495,7 @@ function stepDialog(dt) {
   }
   if (it.kind === 'ask') {
     if (it.shown < it.text.length) { typeText(it, it.text, dt, []); return; }
-    if (!it.optsShown) { it.optsShown = true; showOptions(it); }
+    if (!it.optsShown) { it.optsShown = true; showOptions(it); send({ t: 'presented', id: it.id }); }
   }
   if (it.kind === 'dialog') stepTalk(it, dt);
 }
