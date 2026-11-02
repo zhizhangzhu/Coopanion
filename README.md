@@ -3,6 +3,7 @@
 This fork includes an AstrBot-connected Windows terminal. See [terminal setup and support boundaries](docs/ASTRBOT_TERMINAL.md).
 
 The AstrBot terminal includes a native shared-history chat window, complex World configuration and Windows-encrypted extension secrets. World cognition runs under the server scheduler and budget.
+The AstrBot edition reuses the original native shell and complete console UI, including habits, dressing, voice, chat, themes and the extension market. AstrBot provides the persona, memory and model decisions.
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/banner-dark.svg">

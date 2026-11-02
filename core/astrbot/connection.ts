@@ -1,5 +1,5 @@
 /** WSS client with durable request identities and bounded, non-LLM reconnects. */
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { existsSync, readFileSync, mkdirSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import WebSocket from 'ws';
@@ -91,7 +91,9 @@ export class TerminalConnection {
     const durable = ['desktop-pet.message', 'desktop-pet.speech', 'desktop-pet.answer'].includes(String(payload.event_type));
     if (!this.welcomed && !durable) return;
     if (this.journal.events.length >= 100) throw new Error('terminal_outbox_full');
-    const message = frame('event', randomUUID(), payload);
+    const id = typeof payload.cursor === 'number' ? 'event-' + createHash('sha256').update(JSON.stringify([payload.store_run, payload.cursor, payload.occurred_at, payload.world, payload.event_type, payload.text, (payload.attachments as Array<{ sha256?: string }> | undefined)?.map((a) => a.sha256)])).digest('hex').slice(0, 40) : randomUUID();
+    if (this.journal.events.some((event) => event.id === id)) return;
+    const message = frame('event', id, payload);
     this.journal.events.push(message);
     this.save();
     if (this.welcomed) this.send(message);
@@ -178,6 +180,8 @@ export class TerminalConnection {
       }
     } else if (message.type === 'ack') {
       this.delegate.error?.(message.payload.status === 'failed' ? 'message_not_accepted' : '');
+      const event = this.journal.events.find((e) => e.id === message.id);
+      if (['delivered','observed','failed'].includes(String(message.payload.status)) && typeof event?.payload.cursor === 'number') this.delegate.lifecycle?.({ kind: String(message.payload.status), cursor: event.payload.cursor });
       this.journal.events = this.journal.events.filter((e) => e.id !== message.id);
       this.save();
     } else if (message.type === 'error') {

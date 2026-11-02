@@ -33,6 +33,7 @@ import { coreFeature } from './advanced/features/core/index.ts';
 import { providersFeature } from './advanced/features/providers/index.ts';
 import { traceFeature } from './advanced/features/trace.ts';
 import { worldsFeature } from './advanced/features/worlds/index.ts';
+import { sharedHistoryPage } from './features/astrbot/index.ts';
 import { chatPage } from './features/chat/index.ts';
 import { usagePage } from './features/cost/index.ts';
 import { dressPage } from './features/dress/index.ts';
@@ -69,7 +70,7 @@ const fromFeature = (feature: FrameworkFeature, group: Entry['group'], basic = f
 /** The rail's entries in order. */
 export const ENTRIES: readonly Entry[] = [
   fromPage(homePage), fromPage(petPage), fromPage(dressPage), fromPage(voicePage),
-  fromFeature(promptsFeature, 'primary', true), fromPage(usagePage), fromPage(chatPage),
+  fromFeature(promptsFeature, 'primary', true), fromPage(usagePage), fromPage(chatPage), ...(window.astrbotTerminal ? [fromPage(sharedHistoryPage)] : []),
   // 模型供应商 keeps the providers page's own name
   fromFeature(providersFeature, 'integrations'),
   fromFeature(traceFeature, 'diagnostics'), fromFeature(coreFeature, 'diagnostics'),
@@ -129,7 +130,7 @@ export function boot(doc: Document = document): Disposable {
   /** The rail's groups: the pages, the World tree, 接入, 人格与记忆, 诊断. Only active pages of the manifest are listed. */
   const renderNav = (): void => {
     const entries = ENTRIES.filter(available);
-    const listed = host.pages.filter((p) => p.availability === 'active');
+    const listed = host.pages.filter((p) => p.availability === 'active' && (!window.astrbotTerminal || p.id !== 'world:astrbot-ui'));
     const hidden = navHidden(window);
     const pages = (kind: string, icon?: ConsoleIconName) => listed.filter((p) => p.kind === kind && !hidden.has(p.id)).map((p): NavItem => ({
       label: p.label || p.id, ...(icon ? { icon } : {}), segments: [PROVIDER_ROUTE, p.id], basic: kind === 'world', pageId: p.id, lamps: p.lamps ?? [],

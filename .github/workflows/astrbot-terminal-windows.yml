@@ -3,7 +3,12 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
-      - 'app/terminal*'
+      - 'app/**'
+      - 'console/**'
+      - 'core/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'scripts/accept-astrbot-windows.cjs'
       - 'core/astrbot/**'
       - 'core/terminal-boot.ts'
       - 'packages/cortico-world-desktop-pet/**'
@@ -20,6 +25,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           submodules: recursive
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -39,6 +45,7 @@ jobs:
           COOPANION_TERMINAL: '1'
           PACK_ARCH: x64
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - run: node scripts/accept-astrbot-windows.cjs
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: AstrBot-Desktop-Pet-Windows-x64
@@ -46,5 +53,6 @@ jobs:
             dist/AstrBot-Desktop-Pet-Setup-*.exe
             dist/AstrBot-Desktop-Pet-Setup-*.exe.blockmap
             dist/latest.yml
+            dist/acceptance/**
           if-no-files-found: error
           retention-days: 30

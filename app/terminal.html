@@ -1,7 +1,0 @@
-<!doctype html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'none'; img-src data: blob:"><link rel="stylesheet" href="terminal.css"><title>AstrBot</title></head>
-<body><main><header><h1>AstrBot</h1><p id="status" role="status"></p></header>
-<nav id="terminal-tabs" aria-label="Navigation"><button id="tab-chat" aria-selected="true"></button><button id="tab-settings" aria-selected="false"></button></nav>
-<section id="chat-pane"><div class="chat-toolbar"><select id="chat-source"><option value="desktop"></option><option value="shared"></option></select><button id="chat-older" hidden></button></div><div id="chat-records" role="log" aria-live="polite" aria-relevant="additions"></div><p id="chat-notice" role="status"></p><form id="chat-compose"><textarea id="chat-text" rows="2"></textarea><div class="compose-actions"><label class="file-button"><span id="chat-attach"></span><input id="chat-files" type="file" accept="image/png,image/jpeg,image/gif,image/webp" multiple></label><button id="chat-send" type="submit" class="primary"></button></div></form></section>
-<section id="settings-pane" hidden><p id="help"></p><div id="actions"></div><h2 id="extensions-title"></h2><div id="extensions"></div><section id="world-config"></section><section id="market"></section></section>
-</main><script src="terminal-chat.cjs"></script><script src="terminal-ui.cjs"></script></body></html>

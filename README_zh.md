@@ -3,6 +3,7 @@
 本 fork 新增连接 AstrBot 的 Windows 桌宠终端，详见[终端运行与支持范围](docs/ASTRBOT_TERMINAL.md)。
 
 AstrBot 终端提供独立聊天窗口、共享历史分页、复杂 World 配置和 Windows 加密扩展密钥；扩展认知由服务器统一调度并计入预算。
+AstrBot 版本直接复用原生窗口和完整控制台 UI，包括习惯、装扮、语音、聊天、主题和扩展市场；人格、记忆与模型决策统一由 AstrBot 提供。
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/banner-dark.svg">

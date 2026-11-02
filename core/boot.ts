@@ -27,5 +27,5 @@ process.env.CORTICO_HOME ??= join(APP, 'build', 'home');
 process.env.CORTICO_EXTENSIONS_DIR ??= join(APP, 'build', 'data', 'extensions');
 
 await import(pathToFileURL(join(CORTICO, 'src', 'extensions', 'runtime.ts')).href);
-const { main } = await import('./companion.ts');
+const { main } = process.env.COOPANION_ASTRBOT_TERMINAL === '1' ? await import('./astrbot/native.ts') : await import('./companion.ts');
 await main();

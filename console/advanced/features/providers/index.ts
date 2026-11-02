@@ -1,3 +1,4 @@
+import { connectionCard } from '../../../features/astrbot/index.ts';
 import { pageIntro } from '../../../base/ui/page.ts';
 import { pageTabs } from '../../../base/ui/page-tabs.ts';
 import { mountExtensionContent, type ExtensionController } from '../extensions/index.ts';
@@ -14,6 +15,7 @@ import { CHATGPT_MODULE } from 'cortico-provider-coo/src/vendors.ts';
 /** How often the card list re-reads other deployments' usage. */
 const USAGE_REFRESH_MS = 5000;
 export function mountProviders(ctx: FeatureContext): void {
+  if (window.astrbotTerminal) { ctx.root.append(pageIntro(ctx.ui, S.pageTitle)); void connectionCard(ctx).catch(ctx.onError); return; }
   const { root, ui, router, signal } = ctx;
   const intro = pageIntro(ui, S.pageTitle);
   const settings = ui.h('div', 'provider-settings');

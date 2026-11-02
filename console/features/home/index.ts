@@ -31,6 +31,7 @@ import {
   type ConnectResult, type Region, type Status, type Vendor,
 } from './model.ts';
 import { S } from './strings.ts';
+import { connectionCard } from '../astrbot/index.ts';
 
 const PET_PAGE = 'world:desktop-pet';
 
@@ -57,10 +58,13 @@ async function mount(ctx: PageContext): Promise<void> {
   guide.title = S.guideHint;
   root.append(intro(ui, S.nav, { actions: [guide] }));
 
+  const terminal = !!window.astrbotTerminal;
+  if (terminal) await connectionCard(ctx);
   /* ---------- model ---------- */
   // one view: the service in use on the first row with its test button, the others below it; a pick fills
   // the model and key boxes under them, saved with 「保存并开始」
   const model = ui.sheet({ title: S.modelTitle });
+  model.el.hidden = terminal;
   const modelMsg = ui.msgline('');
   const call = consoleCall(signal);
   const { shown, more } = vendorsFor(LANGUAGE);
@@ -244,6 +248,7 @@ async function mount(ctx: PageContext): Promise<void> {
   };
 
   const refreshModel = async () => {
+    if (terminal) return;
     renderStatus(await readStatus(signal));
   };
 

@@ -23,6 +23,7 @@ import { intro } from '../intro.ts';
 import { requestMode } from '../mode.ts';
 import { contextGauge, contextRing, type ContextGauge, type ContextStatus } from './context.ts';
 import { S, STEP } from './strings.ts';
+import { S as INPUT_TEXT } from '../../base/ui/strings.ts';
 
 const PET_PAGE = 'world:desktop-pet';
 /** The switch for the context ring, a key of the `companion` config group. */
@@ -125,9 +126,10 @@ async function mount(ctx: PageContext): Promise<void> {
     label: S.title,
     draftKey: 'cortico.console.draft.chat',
     placeholder: S.connecting,
-    images: { max: 8 },
+    images: { max: 8, ...(window.astrbotTerminal ? { maxBytes: 1024 * 1024 } : {}) },
     tools: ring.el,
     onSubmit: (text, images) => {
+      if (window.astrbotTerminal && images.reduce((sum, image) => sum + image.bytes, 0) > 1024 * 1024) { ui.toast(INPUT_TEXT.stillTooLarge(INPUT_TEXT.imageFallback, 1)); return false; }
       const id = nextSend++;
       sentById.set(id, { text, images });
       stream.send(JSON.stringify({ t: 'send', id, text, images: images.map((i) => ({ mime: i.mime, base64: i.base64, name: i.name })) }));

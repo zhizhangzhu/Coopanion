@@ -277,6 +277,7 @@ export class TerminalHost {
     for (const render of queue) { try { await render(); } catch { /* An unrenderable event is discarded. */ } }
   }
   lifecycle(payload: Record<string, unknown>): void {
+    if (['observed','failed'].includes(String(payload.kind)) && typeof payload.cursor === 'number') { this.pending.delete(payload.cursor); return; }
     if (payload.kind === 'delivered' && typeof payload.cursor === 'number') {
       const item = this.pending.get(payload.cursor);
       if (item) { this.pending.delete(payload.cursor); this.slots.get(item.event.source)?.world.onEventsSettled?.([item.event], 'delivered'); }

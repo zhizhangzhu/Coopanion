@@ -68,6 +68,10 @@ export async function normalizeImage(
   }
   try {
     const name = file.name || 'image';
+    if (file.type === 'image/gif') {
+      if (file.size > maxBytes) throw new Error(S.stillTooLarge(name, Math.round(maxBytes / 1024 / 1024)));
+      return { name, mime: file.type, base64: await toBase64(file), bytes: file.size, width: bitmap.width, height: bitmap.height };
+    }
     const fitted = fitWithin(bitmap.width, bitmap.height, maxEdge);
     const untouched = fitted.width === bitmap.width && fitted.height === bitmap.height && file.size <= maxBytes;
     if (untouched) {

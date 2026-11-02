@@ -1,32 +1,38 @@
-# AstrBot terminal: app/terminal.cjs and core/astrbot/
+# AstrBot terminal: app/terminal.cjs, app/main.cjs and core/astrbot/native.ts
 
-This fork adds a Windows terminal that runs desktop-pet Worlds while AstrBot owns the persona, shared conversation, memory and model decisions. The original Coopanion entry remains available.
+The Windows AstrBot edition uses the original Coopanion native shell and complete `console/` UI. Habits, dressing and figure packs, voice, chat, themes, World panels and the extension market retain their original components and interactions. The default figure is DeepSeek Chan. AstrBot owns the conversational persona, shared memory, models and proactive coordination.
 
 ## Run and pair
 
-Use Node 24.11 and pnpm 11.28.6. After `pnpm install --frozen-lockfile` and `pnpm run build:cortico`, run `pnpm run dev:terminal`. Development uses a separate empty directory supplied through `CORTICO_COMPANION_DATA`; do not use an installed app's data.
+Use Node 24.11 and pnpm 11.28.6. After `pnpm install --frozen-lockfile` and `pnpm run build:cortico`, set `CORTICO_COMPANION_DATA` to a separate empty directory and run `pnpm run dev:terminal`. Never use another installed app's data for development.
 
-Import the private pairing JSON created by the AstrBot desktop plugin through a trusted channel. The file contains a WSS address, a public CA certificate and one revocable device credential. Server private keys, QQ sessions and model credentials remain on the server. For a controlled deployment, `"AstrBot Desktop Pet.exe" --pairing-file <private-file.local.json>` imports the same validated pairing without a file picker; it never accepts credentials on the command line. Delete the transferred plaintext file after import. The installed app encrypts the pairing with Electron safeStorage under `%APPDATA%\AstrBotCoopanion`.
+Import the private pairing JSON through the AstrBot card on Home. Alternatively, `"AstrBot Desktop Pet.exe" --pairing-file <private-file.local.json>` imports the same validated file. The file contains the WSS IP address, a public CA certificate and a revocable device credential. Transfer it through trusted SSH/SFTP and delete the plaintext transfer after import. Electron safeStorage encrypts the retained credential under `%APPDATA%\AstrBotCoopanion`.
 
-The connection validates TLS and the server's IP or hostname using this connection's CA. It does not modify Windows root certificates or ignore certificate errors. A client has one active server and paired persona/user. Changing the pairing restarts Worlds with a separate device data directory and invalidates the old connection.
+TLS validates the certificate and the IP/hostname for this connection. Windows root certificates are not changed. QQ sessions, server keys and model credentials stay on Linux. One active server/persona/user is bound to the client. Re-pairing switches to a separate device directory and stops the old Worlds/connection.
 
-## Runtime boundaries
+## Native UI, remote decisions
 
-`TerminalConnection` owns protocol v1, reconnection and a durable event/call journal. `TerminalHost` runs real Worlds and provides their local event store, blobs, environment descriptions and tools. There is no local Persona or model loop in terminal mode. Existing desktop figures and local animation run without remote model calls.
+`core/boot.ts` selects `native.ts` only for the AstrBot edition. The original Core supplies its HTTP config APIs, World panel streams, extension assets and local event/media records. `NativeBridge` relays events to AstrBot and advances the local recovery watermark. The local model loop receives none of those events; its model client fails closed. No second local Persona or conversational model manages identity or memory.
 
-`runtime.ts` exposes a token-protected loopback HTTP API for settings and the extension market. The native preload is the only bridge from the settings page to that API; the page cannot read pairing credentials. Native lock/suspend events and World changes update the server's interaction state. Basic state refreshes locally every two seconds; unchanged catalogs do not refresh more than every thirty seconds unless a capability or event changes. None of these refreshes invokes a model.
+Home and the advanced model page show the AstrBot connection instead of collecting local model credentials. The original prompt page can display the server-managed persona as a generated section and edit World environment templates. The shared-records page reads the paired server conversation with pagination; it does not invent missing source/time metadata. The usage page receives actual server-reported token counts; missing price quotes are not authoritative billing figures.
 
-World schemas (including nested objects and arrays), environment descriptions, deferred events, candidates and lifecycle notifications are supported. Bounded World cognition delegates to the server Companion coordinator and its model budget; nested tool calls retain their parent identity. Output taps receive final generated text after generation, rather than token streaming. A separate handoff/model-loop runtime and local model usage reporting are unavailable in terminal mode. A broken World becomes unavailable without taking healthy Worlds offline. Enabling a World makes its supported tools available to the paired AstrBot; computer use retains the desktop World's own opt-in setting. Text input is available first; ASR defaults off and can use the existing World configuration.
+World tools and environment descriptions are advertised from active, visible instances. Their standard configuration and frontend bundles remain native. World cognition delegates to AstrBot's admitted scheduler and model budget; nested calls preserve parent identities and execution receipts. Extensions that require a local Cortico Persona or private Core APIs are not automatically compatible. Output taps receive generated text after generation rather than token streaming.
 
-Calls return actual results. Speech and question presentation wait for a matching renderer receipt in terminal mode; an interrupted or disconnected action remains unknown unless confirmed. Existing animation actions can return `submitted`; this is not a completed activity. Reconnection reconciles request IDs instead of replaying uncertain effects. Images carry actual bytes and a digest; one batch is limited to eight attachments and 1 MiB total. GIF bytes remain one attachment.
+The original voice settings, custom interaction choices, typing key, figure import and extension pages use their public panel contracts. Per-device/per-World secrets use Windows CurrentUser DPAPI, with no secret values returned by settings APIs. Computer use and ASR retain their original opt-in controls; connecting AstrBot does not enable them.
 
-The server keeps passive replies on their input terminal. Proactive interaction prefers an interactive desktop; hidden, locked, suspended or quiet state waits instead of delivering the same interaction through QQ. Unknown delivery is not immediately retried on QQ. The server's Companion scheduler owns activity admission and model budgets.
+## Delivery and recovery
 
-The native chat window includes paginated desktop records, image/GIF attachments, option questions and a separate paginated view of the paired AstrBot conversation. Shared records do not invent a source terminal when the historical record lacks one. Settings support declared complex schemas, declared panel actions through the advanced JSON interface, and per-device/per-World secrets encrypted with Windows CurrentUser DPAPI. Secret values are never returned to the settings page. Native custom extension frontends are not embedded; panels use their public invoke/stream contracts. Unconfirmed presentation is not reported as a completed experience.
+QQ and desktop share the verified user's recent conversation and memory, while retaining the true source and reply destination. Passive replies stay on the input terminal. Proactive interaction prefers a visible, interactive desktop. Hidden, locked, suspended or quiet state waits instead of sending the same interaction on QQ.
 
-## Build and upgrade
+Requests and results have durable identities. Displayed speech waits for its renderer receipt; interrupted or unconfirmed actions remain unknown and are not blindly replayed. Paused/offline chat survives restart in the native pending journal and WSS outbox. Server-queued input is recoverable; already delivered input is not regenerated. Observation acknowledgements clear pending transport state without pretending to be new human dialogue.
 
-`.github/workflows/astrbot-terminal-windows.yml` builds a Windows x64 NSIS artifact after the five required checks. It does not publish a Release. On Windows:
+The tray Show pet action closes the hidden window and opens it again. Reopening also checks visibility, since a hidden pet can remain connected. This avoids treating a living process as an already-visible window.
+
+Media transfers carry original bytes and a digest: up to eight images and 1 MiB total per batch. GIFs remain animated files and are not silently converted to a static canvas image. Oversized input is rejected.
+
+## Windows build and acceptance
+
+`.github/workflows/astrbot-terminal-windows.yml` checks out the exact source commit, runs the five required suites, builds the x64 NSIS installer, then runs `scripts/accept-astrbot-windows.cjs`. That acceptance installs the real package, opens the original console, pairs to an isolated WSS fixture, sends native chat, checks the display receipt, hides/restores the pet and verifies reinstall preserves encrypted pairing. The artifact includes its report and a native-window screenshot. No real QQ account, model credential or user conversation is used by CI.
 
 ```powershell
 pnpm install --frozen-lockfile
@@ -36,6 +42,6 @@ $env:PACK_ARCH = "x64"
 pnpm exec tsx scripts/pack.ts
 ```
 
-The build embeds its Git commit and protocol version in the shipped package metadata. The output is `dist/AstrBot-Desktop-Pet-Setup-<version>.exe`, with application ID `io.github.zhizhangzhu.astrbot-coopanion`. The release source is `zhizhangzhu/Coopanion`; automatic update checks are not enabled in terminal mode. Upgrade by installing this fork's new terminal installer; AppData pairing and settings are preserved. Uninstall retains AppData. Never include operator data, pairing files or server keys in a build.
+The output is `dist/AstrBot-Desktop-Pet-Setup-<version>.exe`. Its application ID is `io.github.zhizhangzhu.astrbot-coopanion`; source/protocol metadata records the build's Git commit and protocol v1. Releases belong to `zhizhangzhu/Coopanion`. Automatic self-update is disabled in terminal mode; install a new terminal package to upgrade. Pairing and settings survive reinstall and uninstall. Never include operator data in an installer.
 
-Native Windows installation, upgrade, pairing and lock/suspend tests are required before release. Linux protocol tests are not a substitute for that acceptance.
+CI cannot establish the user's private Linux/Windows network route or replace acceptance against their actual server. That final pairing and ordinary conversation verification remain separate from the isolated fixture.
