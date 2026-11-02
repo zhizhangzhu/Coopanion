@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { existsSync, readFileSync, writeFileSync, renameSync } from 'node:fs';
 import type { Core } from 'cortico/core/core.ts';
 import type { World, WorldHost, EventEnvelope, CoreConfig, CognitionResult, CognitionRequest, BlobRef, ToolOutcome } from 'cortico/core/types.ts';
+import type { WorldStreamSocket } from 'cortico/core/types.ts';
 import type { WorldDefinition, WorldSection } from 'cortico/world.ts';
 import type { StreamEvent } from 'cortico/protocol/open-responses/index.ts';
 import { renderWorldEnvPrompt } from 'cortico/core/prefix.ts';
@@ -18,7 +19,8 @@ export class NativeBridge {
   onEvent: ((event: Record<string, unknown>) => void) | null = null;
   onCognition: ((world: string, request: CognitionRequest, parent?: string) => Promise<CognitionResult>) | null = null;
   onChange: (() => void) | null = null;
-  private pending = new Map<number, { event: EventEnvelope; offered: boolean; trigger: string }>();
+  private pending = new Map<number, { event: EventEnvelope; offered: boolean; trigger: string; accepted?: boolean }>();
+  private chatSockets = new Set<WorldStreamSocket>();
   private execution = new AsyncLocalStorage<string>();
   private calls = new Map<string, { world: string; outputs: Record<string, unknown>[] }>();
   constructor(readonly root: string) { this.vault = new SecretVault(join(root, 'world-secrets.dpapi')); const path = join(root, 'usage-ids.local.json'); this.usageIds = new Set(existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) as string[] : []); const pending = join(root, 'pending.local.json'); if (existsSync(pending)) for (const item of JSON.parse(readFileSync(pending, 'utf8')) as Array<{ event: EventEnvelope; trigger: string }>) this.pending.set(item.event.cursor, { ...item, offered: false }); }
@@ -63,12 +65,14 @@ export class NativeBridge {
           const declaration = world.webUi?.(...args); if (!declaration?.stream) return declaration;
           return { ...declaration, stream(panel: string, socket: import('cortico/core/types.ts').WorldStreamSocket) {
             if (world.id !== 'desktop-pet' || panel !== 'chat') { declaration.stream!(panel, socket); return; }
+            bridge.chatSockets.add(socket); socket.onClose(() => bridge.chatSockets.delete(socket));
             declaration.stream!(panel, { get open() { return socket.open; }, close: (reason) => socket.close(reason), onMessage: (callback) => socket.onMessage(callback), onClose: (callback) => socket.onClose(callback),
               send: (text) => {
                 const value = JSON.parse(text) as Record<string, unknown>;
                 if (value.t === 'init') {
                   const restored = [...bridge.pending.values()].filter((item) => item.event.source === world.id && ['desktop-pet.message','desktop-pet.speech'].includes(item.event.type)).map((item) => item.event.cursor);
                   value.pending = [...new Set([...(Array.isArray(value.pending) ? value.pending : []), ...restored])];
+                  value.accepted = [...bridge.pending.values()].filter((item) => item.accepted).map((item) => item.event.cursor);
                 }
                 socket.send(JSON.stringify(value));
               },
@@ -174,6 +178,12 @@ export class NativeBridge {
     } finally { this.calls.delete(id); slot.world.onRunPhase?.({ state: 'idle', running: [], enteredAt: new Date().toISOString() }); }
   }
   lifecycle(value: Record<string, unknown>): void {
+    if (value.kind === 'accepted' && typeof value.cursor === 'number') {
+      const item = this.pending.get(value.cursor);
+      if (item) { item.accepted = true; this.persistPending(); }
+      for (const socket of this.chatSockets) if (socket.open) socket.send(JSON.stringify({ t: 'transport', cursor: value.cursor, status: 'accepted' }));
+      return;
+    }
     if (['observed','failed'].includes(String(value.kind)) && typeof value.cursor === 'number') { const item = this.pending.get(value.cursor); if (item) { this.pending.delete(value.cursor); this.persistPending(); if (value.kind === 'failed') this.slots.get(item.event.source)?.world.onEventsSettled?.([item.event], 'discarded'); } return; }
     if (value.kind === 'delivered' && typeof value.cursor === 'number') {
       const item = this.pending.get(value.cursor); if (item) { this.pending.delete(value.cursor); this.persistPending(); this.slots.get(item.event.source)?.world.onEventsSettled?.([item.event], 'delivered'); }

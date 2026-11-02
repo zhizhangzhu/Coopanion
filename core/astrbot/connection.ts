@@ -181,6 +181,7 @@ export class TerminalConnection {
     } else if (message.type === 'ack') {
       this.delegate.error?.(message.payload.status === 'failed' ? 'message_not_accepted' : '');
       const event = this.journal.events.find((e) => e.id === message.id);
+      if (message.payload.status === 'queued' && typeof event?.payload.cursor === 'number') this.delegate.lifecycle?.({ kind: 'accepted', cursor: event.payload.cursor });
       if (['delivered','observed','failed'].includes(String(message.payload.status)) && typeof event?.payload.cursor === 'number') this.delegate.lifecycle?.({ kind: String(message.payload.status), cursor: event.payload.cursor });
       this.journal.events = this.journal.events.filter((e) => e.id !== message.id);
       this.save();

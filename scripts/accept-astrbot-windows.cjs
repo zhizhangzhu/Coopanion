@@ -5,7 +5,7 @@ const path = require('node:path');
 const https = require('node:https');
 const { spawn, spawnSync } = require('node:child_process');
 const { once } = require('node:events');
-const { randomBytes } = require('node:crypto');
+const { randomBytes, createHash } = require('node:crypto');
 const { WebSocketServer } = require('ws');
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'astrbot-installer-'));
 const install = path.join(root, 'app'), data = path.join(root, 'data');
@@ -28,6 +28,9 @@ async function main() {
   server = https.createServer({ key: fs.readFileSync(key), cert: fs.readFileSync(cert) });
   const wss = new WebSocketServer({ server });
   let revision = '', observedState = {}, receipt = null;
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGNUWDWNgYGBiYGBgYGBAQAQNAFk96pZewAAAABJRU5ErkJggg==', 'base64');
+  const gif = Buffer.from('R0lGODlhAgACAIEAAAAA/wAAAAAAAAAAACH/C05FVFNDQVBFMi4wAwEAAAAh+QQACgAAACwAAAAAAgACAAAIBgABCAQQEAAh+QQBCgABACwAAAAAAgACAIEAgAAAAAAAAAAAAAAIBgABCAQQEAA7', 'base64');
+  const attachments = [[png,'image/png'],[gif,'image/gif']].map(([bytes,mime]) => ({ mime,base64:bytes.toString('base64'),sha256:createHash('sha256').update(bytes).digest('hex') }));
   const frame = (type, id, payload) => ({ v: 1, type, id, payload });
   wss.on('connection', (peer, request) => {
     if (request.headers.authorization !== 'Bearer '+token) { peer.close(); return; }
@@ -38,14 +41,14 @@ async function main() {
       if (message.type === 'catalog') revision = message.id;
       if (message.type === 'state' || message.type === 'hello') observedState = message.payload;
       if (message.type === 'query') {
-        const payload = message.payload.kind === 'identity' ? { persona_id: 'Acceptance', bot_name: 'Acceptance', user_id: 'user-ci', user_name: 'Sample partner', timezone: 'Asia/Shanghai' } : message.payload.kind === 'persona' ? { text: 'This is an isolated acceptance fixture.' } : { items: [], more: false, before: 0 };
+        const payload = message.payload.kind === 'identity' ? { persona_id: 'Acceptance', bot_name: 'Acceptance', user_id: 'user-ci', user_name: 'Sample partner', timezone: 'Asia/Shanghai', avatar: {source:'qq',bot_id:'bot-ci',mime:'image/png',base64:png.toString('base64'),revision:createHash('sha256').update(png).digest('hex').slice(0,20)} } : message.payload.kind === 'persona' ? { text: 'This is an isolated acceptance fixture.' } : { items: [], more: false, before: 0 };
         peer.send(JSON.stringify(frame('query_result', message.id, payload)));
       }
       if (message.type === 'ping') peer.send(JSON.stringify(frame('pong', message.id, {})));
       if (message.type === 'event') {
         peer.send(JSON.stringify(frame('ack', message.id, { status: 'queued' })));
         peer.send(JSON.stringify(frame('lifecycle', 'delivered', { kind: 'delivered', cursor: message.payload.cursor })));
-        if (message.payload.text === 'Windows native acceptance') peer.send(JSON.stringify(frame('call', 'reply', { world: 'desktop-pet', tool: 'pet_say', arguments: { script: 'Windows native reply received.' }, revision, expires_at: Date.now()/1000+60 })));
+        if (message.payload.text === 'Windows native acceptance') peer.send(JSON.stringify(frame('call', 'reply', { world: 'desktop-pet', tool: 'pet_say', arguments: { script: 'Windows native reply received.' }, attachments, revision, expires_at: Date.now()/1000+60 })));
       }
       if (message.type === 'result' && message.id === 'reply') receipt = message.payload;
     });
@@ -80,6 +83,8 @@ async function main() {
   await evaluate('document.querySelector(".chatview form").requestSubmit()');
   await wait(() => receipt?.status === 'completed', 'Presentation was not confirmed', 160);
   await wait(() => evaluate('document.querySelector(".chat-thread").textContent.includes("Windows native reply received.")'), 'Chat reply missing');
+  await wait(() => evaluate('[...document.querySelectorAll(".chat-thread .chat-avatar img")].some(img=>img.complete && img.naturalWidth>0)'), 'QQ avatar did not render');
+
   const method = (name) => evaluate(`fetch('/api/webui/providers/world%3Adesktop-pet/panels/pet/${name}',{method:'POST',headers:{'Content-Type':'application/json'},body:'{"args":[]}'}).then(r=>r.json())`);
   await method('hideWindow'); await wait(async () => (await method('state')).onDesktop === false, 'Hide failed');
   // Same close/open sequence as the native tray Show pet action.
@@ -91,7 +96,7 @@ async function main() {
   const again = run(path.resolve('dist', installer), ['/S', '/D='+install]); const [reinstalled] = await once(again, 'exit');
   if (reinstalled !== 0 || !fs.readFileSync(pairingFile).equals(preserved)) throw Error('Reinstall replaced pairing');
   terminate();
-  fs.writeFileSync(path.join(output, 'acceptance.json'), JSON.stringify({ installer: 'passed', original_ui: 'passed', wss_pairing: 'passed', chat_and_receipt: 'passed', hide_restore: 'passed', reinstall_preserves_pairing: 'passed' }, null, 2));
+  fs.writeFileSync(path.join(output, 'acceptance.json'), JSON.stringify({ installer: 'passed', original_ui: 'passed', wss_pairing: 'passed', chat_and_receipt: 'passed', body_png_gif_receipt: 'passed', qq_avatar: 'passed', hide_restore: 'passed', reinstall_preserves_pairing: 'passed' }, null, 2));
   console.log('Windows installer and native UI acceptance passed.');
 }
 main().then(() => { clearTimeout(deadline); socket?.close(); server?.close(); process.exit(0); }).catch((error) => { console.error(error.message); clearTimeout(deadline); debuggerSocket?.close(); socket?.close(); server?.close(); for (const child of children) child.kill(); process.exit(1); });

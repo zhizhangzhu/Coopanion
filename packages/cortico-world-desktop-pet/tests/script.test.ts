@@ -24,6 +24,29 @@ describe('parseScript', () => {
     expect(beats[0].actions).toEqual(['happy']);
   });
 
+  it('ignores unsupported actions without splitting a title or ordinary sentence', () => {
+    for (const source of ['我搜到B站有个《【梗知识】好女孩》', '前半句【unsupported】后半句']) {
+      const parsed = parseScript(source);
+      expect(parsed.beats).toHaveLength(1);
+      expect(parsed.beats[0].text).toBe(source.replace(/【[^】]*】/g, ''));
+      expect(parsed.dropped).toHaveLength(1);
+    }
+  });
+
+  it('keeps actions inside paired titles, quotes and parentheses inline', () => {
+    for (const [open, close] of [['《','》'], ['“','”'], ['「','」'], ['（','）'], ['(',')'], ['"','"']]) {
+      const parsed = parseScript(`开头${open}好【开心】女孩${close}接着说【点头】下一句`);
+      expect(parsed.beats.map((b) => b.text)).toEqual([`开头${open}好女孩${close}接着说`, '下一句']);
+      expect(parsed.beats[0].anchors).toEqual([{ at: `开头${open}好`.length, actions: ['happy'] }]);
+      expect(parsed.beats[1].actions).toEqual(['nod']);
+    }
+  });
+
+  it('preserves nested titles and punctuation without any markers', () => {
+    const source = '我搜到《她说“好女孩！”（现场版）》；你看过吗？';
+    expect(parseScript(source).beats).toEqual([{ actions: [], text: source, anchors: [] }]);
+  });
+
   it('treats an over-long or multi-line inline marker as text', () => {
     const long = `<${'x'.repeat(INLINE_TAG_MAX + 1)}>`;
     expect(parseScript(`a${long}b`).beats[0].text).toBe(`a${long}b`);

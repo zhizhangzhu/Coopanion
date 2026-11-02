@@ -36,6 +36,9 @@ it('serves original configuration, panels and chat while bypassing every local m
     socket.send(JSON.stringify({ t: 'send', id: 1, text: 'Native original chat input', images: [] }));
     await expect.poll(() => received.some((e) => e.text === 'Native original chat input')).toBe(true);
     const event = received.find((e) => e.text === 'Native original chat input')!;
+    runtime.bridge.lifecycle({ kind: 'accepted', cursor: event.cursor });
+    await expect.poll(() => frames.some((f) => f.t === 'transport' && f.status === 'accepted')).toBe(true);
+    expect(frames.some((f) => f.t === 'settled')).toBe(false);
     runtime.bridge.lifecycle({ kind: 'delivered', cursor: event.cursor });
     await expect.poll(() => frames.some((f) => f.t === 'settled')).toBe(true);
     expect(runtime.bot.core.bus.pendingImmediate()).toBe(0); expect(model).not.toHaveBeenCalled();

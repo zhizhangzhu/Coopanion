@@ -20,6 +20,7 @@ import { coreText } from '../i18n/index.ts';
 import { NativeBridge } from './native-bridge.ts';
 import { TerminalConnection } from './connection.ts';
 import { pairing, type Pairing, type TerminalState } from './protocol.ts';
+import { syncQQAvatar } from './avatar.ts';
 const APP = fileURLToPath(new URL('../../', import.meta.url));
 interface NativeConfig extends CoreConfig { worlds: Record<string, WorldSection>; companion: { telemetry: boolean; contextRing: boolean; autoUpdate: boolean } }
 export interface NativeTerminalOptions { root: string; language?: Language; window?: boolean; onReady?(value: { port: number; dataDir: string; language: Language }): void; onOpen?(route: string): void; onQuit?(): void }
@@ -141,6 +142,8 @@ export async function createNativeTerminal(options: NativeTerminalOptions) {
       const result = await terminal.request('query', { kind: 'identity' });
       if (connection !== terminal || bot !== localBot || result.persona_id !== binding.persona_id || result.user_id !== binding.user_id || typeof result.bot_name !== 'string' || typeof result.user_name !== 'string') return;
       identity = { persona_id: result.persona_id, user_id: result.user_id, bot_name: result.bot_name.slice(0,128), user_name: result.user_name.slice(0,128), timezone: String(result.timezone ?? 'Asia/Shanghai'), model_id: String(result.model_id ?? '') };
+      const revision = syncQQAvatar(directory, result.avatar, String(binding.bot_id ?? ''));
+      if (revision) identity.avatar_revision = revision;
       writeFileSync(join(directory, 'identity.local.json'), JSON.stringify(identity), { mode: 0o600 });
       writeFileSync(join(directory, 'config.json'), JSON.stringify(config, null, 2)); pet?.refresh();
     } catch { /* Keep the last verified server identity while offline. */ }

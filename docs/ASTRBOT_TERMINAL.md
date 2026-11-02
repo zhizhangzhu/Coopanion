@@ -2,6 +2,8 @@
 
 The Windows AstrBot edition uses the original Coopanion native shell and complete `console/` UI. Habits, dressing and figure packs, voice, chat, themes, World panels and the extension market retain their original components and interactions. The default figure is DeepSeek Chan. AstrBot owns the conversational persona, shared memory, models and proactive coordination.
 
+Version 0.3.2 refreshes the verified QQ Bot avatar through AstrBot and displays it read-only. Transport acceptance is distinct from model admission. Image and GIF replies appear in the chat and body bubble; body presentation requires the renderer's receipt. Unsupported action markers do not split speech, and actions inside paired titles, quotes and parentheses run inline.
+
 ## Run and pair
 
 Use Node 24.11 and pnpm 11.28.6. After `pnpm install --frozen-lockfile` and `pnpm run build:cortico`, set `CORTICO_COMPANION_DATA` to a separate empty directory and run `pnpm run dev:terminal`. Never use another installed app's data for development.

@@ -310,7 +310,7 @@ function onOrder(m) {
     // the settings window's 「在桌面上隐藏」: the same as the menu's 「隐藏」
     case 'hide': host?.hide?.(); break;
     case 'type': openTyping(); break;
-    case 'say': dropAsks(); queue.push({ kind: 'say', id: m.id, beats: m.beats, i: -1 }); holdRoam(20); break;
+    case 'say': dropAsks(); queue.push({ kind: 'say', id: m.id, beats: m.beats, images: Array.isArray(m.images) ? m.images.slice(0,8) : [], i: -1 }); holdRoam(20); break;
     case 'ask': dropAsks(); queue.push({ kind: 'ask', id: m.id, question: m.question, options: m.options || [], own: m.own !== false }); holdRoam(20); break;
     case 'confirm': dropAsks(); queue.push({ kind: 'ask', confirm: true, id: m.id, question: m.question, options: m.options, own: false }); holdRoam(20); break;
     case 'walk': walk(m); break;
@@ -469,6 +469,7 @@ function stepDialog(dt) {
   const it = item;
   if (!it) return;
   if (it.kind === 'say') {
+    if (it.mediaFailed) { closeBubble(); return; }
     if (it.i < 0 || it.beatDone) {
       if (it.beatDone && pointedAt()) it.holdUntil += dt;
       if (it.beatDone && T < it.holdUntil) return;
@@ -479,12 +480,27 @@ function stepDialog(dt) {
       let lead = 0;
       for (const a of b.actions || []) { acts.push(a); lead = .45; }
       it.shown = 0; it.acc = 0; it.fired = 0; it.startAt = T + lead;
-      if (b.text) { openBubble('say', '<p class="b-text"></p>'); sfx.pop(); } else { bubble.hidden = true; }
+      const hasImages = it.i === 0 && it.images?.length;
+      if (b.text || hasImages) {
+        openBubble('say', '<p class="b-text"></p>');
+        if (hasImages) {
+          const media = document.createElement('div'); media.className = 'b-media'; bubble.append(media);
+          it.mediaReady = false; let remaining = it.images.length;
+          for (const value of it.images) {
+            const img = document.createElement('img'); img.alt = '';
+            img.onload = () => { if (--remaining === 0) it.mediaReady = true; };
+            img.onerror = () => { it.mediaFailed = true; send({ t: 'presentation_failed', id: it.id }); };
+            if (typeof value.src !== 'string' || !/^data:image\/(png|jpeg|gif|webp);base64,/.test(value.src) || value.src.length > 1500000) { img.onerror(); continue; }
+            img.src = value.src; media.append(img);
+          }
+        }
+        sfx.pop();
+      } else { bubble.hidden = true; }
       return;
     }
     const b = it.beats[it.i];
-    if (T < it.startAt) return;
-    if (!b.text) { it.beatDone = true; it.holdUntil = T + .8 / prefs.bubbleSpeed; return; }
+    if (T < it.startAt || it.mediaReady === false) return;
+    if (!b.text) { it.beatDone = true; it.holdUntil = T + (it.images?.length ? 5 : .8) / prefs.bubbleSpeed; return; }
     typeText(it, b.text, dt, b.anchors || []);
     if (it.shown >= b.text.length && !it.beatDone) {
       it.beatDone = true;

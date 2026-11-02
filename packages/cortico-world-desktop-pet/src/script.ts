@@ -78,6 +78,8 @@ export function parseScript(script: string, vocab: readonly VocabWord[]): Parsed
   const dropped: string[] = [];
   const beats: Beat[] = [];
   let cur: Beat = { actions: [], text: '', anchors: [] };
+  const paired: Record<string, string> = { '《': '》', '〈': '〉', '“': '”', '‘': '’', '「': '」', '『': '』', '（': '）', '(': ')', '[': ']', '{': '}' };
+  const closers: string[] = [];
   let i = 0;
   while (i < script.length) {
     const ch = script[i];
@@ -85,6 +87,13 @@ export function parseScript(script: string, vocab: readonly VocabWord[]): Parsed
       const end = script.indexOf('】', i + 1);
       if (end < 0) { cur.text += script.slice(i); break; }
       const acts = words(script.slice(i + 1, end), dropped, vocab);
+      // Ignored actions have no presentation boundary. Actions inside a title or
+      // quoted phrase run inline so its opening and closing marks stay together.
+      if (!acts.length || closers.length) {
+        if (acts.length) cur.anchors.push({ at: cur.text.length, actions: acts });
+        i = end + 1;
+        continue;
+      }
       if (cur.text.trim() || cur.actions.length || cur.anchors.length) beats.push(cur);
       cur = { actions: acts, text: '', anchors: [] };
       i = end + 1;
@@ -100,6 +109,9 @@ export function parseScript(script: string, vocab: readonly VocabWord[]): Parsed
       i = end + 1;
       continue;
     }
+    if (ch === closers.at(-1)) closers.pop();
+    else if (paired[ch]) closers.push(paired[ch]);
+    else if (ch === '"' && script[i - 1] !== '\\') closers.push(ch);
     cur.text += ch;
     i++;
   }

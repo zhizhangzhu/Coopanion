@@ -103,7 +103,7 @@ const zh = {
   sayEmpty: '[pet_say 没执行] 脚本是空的,也没带图片。不想说话就不调用。',
   sayReceipt: (r: SayReceipt) => `${r.waitSec > .5 ? `已排队,前面还有约 ${Math.round(r.waitSec)} 秒` : '已开始显示'},这段约 ${Math.round(r.selfSec)} 秒。`
     + (r.chatOpen ? '对话页开着,这段也显示在那里。' : '')
-    + (r.images ? `附带的 ${r.images} 张图片只显示在对话页。` : '')
+    + (r.images ? `附带的 ${r.images} 张图片也显示在身体气泡中。` : '')
     + (r.replaced !== null ? `替换了还没回答的提问「${r.replaced}」。` : '')
     + (r.dropped.length ? `\n[执行参数] 当前形象的词表里没有这些标记,已略过:${r.dropped.join('、')}。` : ''),
 
@@ -229,7 +229,7 @@ const en: typeof zh = {
       ? `Queued behind about ${Math.round(r.waitSec)} s of earlier lines; this one takes about ${Math.round(r.selfSec)} s.`
       : `Showing now; this one takes about ${Math.round(r.selfSec)} s.`,
     r.chatOpen ? 'The chat page is open and shows it too.' : '',
-    r.images ? `The ${r.images} image${r.images > 1 ? 's' : ''} with it show only on the chat page.` : '',
+    r.images ? `The ${r.images} image${r.images > 1 ? 's' : ''} with it also appear in your body’s speech bubble.` : '',
     r.replaced !== null ? `Replaced the unanswered question "${r.replaced}".` : '',
   ].filter(Boolean).join(' ')
     + (r.dropped.length ? `\n[arguments] These markers are not in the current figure's vocabulary and were skipped: ${r.dropped.join(', ')}.` : ''),

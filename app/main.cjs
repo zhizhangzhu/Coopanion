@@ -362,6 +362,7 @@ async function serveWindow(request) {
     if (url.pathname.startsWith(WINDOW_PREFIX)) return windowFile(url);
     if (from !== coreOrigin()) return refused();
     // a shutdown the console asked for is not a crash
+    if (ASTRBOT && request.method === 'POST' && url.pathname === '/api/avatar') return refused();
     if (request.method === 'POST' && url.pathname === '/api/run/shutdown') {
       core.expectStop();
       const response = await forward(request, url, from);

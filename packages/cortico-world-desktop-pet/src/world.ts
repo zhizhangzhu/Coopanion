@@ -1078,6 +1078,10 @@ export class DesktopPetWorld implements World {
 
   private onPage(msg: PageMessage): void {
     switch (msg.t) {
+      case 'presentation_failed': {
+        if (typeof msg.id === 'string') this.presentations.get(msg.id)?.reject(new Error('image_presentation_failed'));
+        return;
+      }
       case 'presented': {
         if (typeof msg.id === 'string') this.presentations.get(msg.id)?.resolve();
         return;
@@ -1778,11 +1782,14 @@ export class DesktopPetWorld implements World {
     const spoken = beats.some((b) => b.text || b.actions.length || b.anchors.length);
     if (!spoken && shown.blobs.length === 0) return { text: this.t.sayEmpty, failed: true };
     const id = nextId('s');
-    if (spoken && !this.server.sendPet({ t: 'say', id, beats })) return this.notConnected('pet_say');
-    const presented = spoken ? this.confirmPresented(id, ctx) : Promise.resolve();
+    const images = shown.blobs.map((blob) => ({ src: 'data:'+blob.mime+';base64,'+Buffer.from(blob.bytes).toString('base64') }));
+    const bubbleBeats = beats.length ? beats : [{ text: '', actions: [], anchors: [] }];
+    const bodySent = this.server.sendPet({ t: 'say', id, beats: bubbleBeats, images });
+    if (spoken && !bodySent) return this.notConnected('pet_say');
+    const presented = bodySent ? this.confirmPresented(id, ctx) : Promise.resolve();
     void this.closeActivity();
     void this.record({ kind: 'say', beats: beats.map((b) => ({ text: b.text, ...moodOf(b.actions, this.vocab()) })) }, beats.map((b) => b.text).join(''), shown.blobs);
-    if (!spoken) return { text: this.t.imagesShown(shown.blobs.length, this.chat.size > 0) };
+    if (!spoken && !bodySent) return { text: this.t.imagesShown(shown.blobs.length, this.chat.size > 0) };
     const now = Date.now();
     const selfSec = estimateSeconds(beats, this.cfg.window.bubbleSpeed, this.cfg.speech.enabled ? speechTextSteps : undefined);
     const waitSec = Math.max(0, (this.busyUntil - now) / 1000);
@@ -1798,11 +1805,11 @@ export class DesktopPetWorld implements World {
    * The images of a `pet_say`: each handle is read through the host and attached again as bytes,
    * so the stored line keeps the picture it showed after a Memory file changes.
    */
-  private shownImages(raw: unknown): { ok: true; blobs: BlobInput[] } | { ok: false; reason: string } {
+  private shownImages(raw: unknown): { ok: true; blobs: Array<Extract<BlobInput, { bytes: unknown }>> } | { ok: false; reason: string } {
     if (raw === undefined) return { ok: true, blobs: [] };
     if (!Array.isArray(raw) || raw.some((h) => typeof h !== 'string')) return { ok: false, reason: this.t.imagesNotHandles };
     if (raw.length > IMAGES_MAX) return { ok: false, reason: this.t.tooManyImages(IMAGES_MAX) };
-    const blobs: BlobInput[] = [];
+    const blobs: Array<Extract<BlobInput, { bytes: unknown }>> = [];
     for (const [i, handle] of (raw as string[]).entries()) {
       const got = this.host?.blob(handle);
       if (!got) return { ok: false, reason: this.t.imageMissing(handle) };

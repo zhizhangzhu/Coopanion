@@ -751,6 +751,20 @@ describe('chat page', () => {
     await expect.poll(() => chat.last('draft')).toEqual({ t: 'draft', text: '还有这张', images: [png] });
   });
 
+  it('sends original GIF bytes to the body and waits for its presentation receipt', async () => {
+    const { world, host } = await mounted(undefined, { confirmPresentation: true });
+    const page = await FakePage.open(origin(world)); cleanup.push(() => page.close());
+    const gif = Buffer.from('GIF89a-test-image');
+    host.mem.set('mem:blobs/wave.gif', { bytes: gif, mime: 'image/gif' });
+    let done = false;
+    const pending = Promise.resolve(tool(world, 'pet_say').handler({ script: '', images: ['mem:blobs/wave.gif'] }, ctx)).then((out) => { done = true; return out; });
+    const frame = await page.next((m) => m.t === 'say');
+    expect(frame.images).toEqual([{ src: 'data:image/gif;base64,' + gif.toString('base64') }]);
+    expect(done).toBe(false);
+    page.send({ t: 'presented', id: frame.id });
+    expect(await pending).toMatchObject({ presentationConfirmed: true });
+  });
+
   it('pet_say images show on the chat page as they were when shown, live and in history', async () => {
     const { world, host } = await mounted();
     const page = await FakePage.open(origin(world));
