@@ -32,7 +32,7 @@ if (process.argv.includes('--pet-host')) {
     };
     const request = async (path, method = 'GET', body) => {
       if (!address && path === '/terminal/restart' && method === 'POST') { app.relaunch(); app.quit(); return {}; }
-      if (!address || !['/terminal/status', '/terminal/show', '/terminal/disconnect', '/terminal/dnd', '/terminal/extensions/search', '/terminal/extensions/install', '/terminal/extensions/remove', '/terminal/worlds', '/terminal/world', '/terminal/restart'].includes(path) || !['GET', 'POST'].includes(method)) throw new Error('terminal_unavailable');
+      if (!address || !['/terminal/status', '/terminal/show', '/terminal/disconnect', '/terminal/dnd', '/terminal/extensions/search', '/terminal/extensions/install', '/terminal/extensions/remove', '/terminal/worlds', '/terminal/world', '/terminal/restart', '/terminal/chat/open', '/terminal/chat/poll', '/terminal/chat/send', '/terminal/chat/close', '/terminal/chat/blob', '/terminal/chat/shared', '/terminal/panel', '/terminal/secret'].includes(path) || !['GET', 'POST'].includes(method)) throw new Error('terminal_unavailable');
       const response = await fetch(`http://127.0.0.1:${address.port}${path}`, { method, headers: { Authorization: 'Bearer ' + address.token, 'Content-Type': 'application/json' }, ...(body ? { body: JSON.stringify(body) } : {}) });
       if (!response.ok) throw new Error('terminal_request_failed');
       return response.json();
@@ -44,6 +44,19 @@ if (process.argv.includes('--pet-host')) {
       }
       } catch { open(); }
     };
+    const importPairing = (file) => {
+      if (!safeStorage.isEncryptionAvailable()) throw new Error(strings(language)[9]);
+      const text = readFileSync(file, 'utf8');
+      const pair = JSON.parse(text), url = new URL(pair.url);
+      if (pair.v !== 1 || url.protocol !== 'wss:' || url.username || url.password || url.search || url.hash || url.pathname !== '/terminal/v1' || typeof pair.device_id !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(pair.device_id) || typeof pair.token !== 'string' || pair.token.length < 32 || pair.token.length > 256 || typeof pair.ca !== 'string' || pair.ca.length > 16384 || !pair.ca.includes('BEGIN CERTIFICATE')) throw new Error('invalid_pairing');
+      writeFileSync(pairFile + '.tmp', safeStorage.encryptString(text), { mode: 0o600 });
+      renameSync(pairFile + '.tmp', pairFile);
+      loadPair();
+    };
+    const importArgument = (args) => {
+      const index = args.indexOf('--pairing-file');
+      if (index >= 0 && typeof args[index + 1] === 'string') importPairing(args[index + 1]);
+    };
     ipcMain.handle('terminal:strings', (event) => { if (!allowed(event)) throw new Error('forbidden'); return strings(language); });
     ipcMain.handle('terminal:request', (event, path, method, body) => { if (!allowed(event)) throw new Error('forbidden'); return request(path, method, body); });
     ipcMain.handle('terminal:import', async (event) => {
@@ -51,21 +64,16 @@ if (process.argv.includes('--pet-host')) {
       if (!safeStorage.isEncryptionAvailable()) throw new Error(strings(language)[9]);
       const selected = await dialog.showOpenDialog(window, { properties: ['openFile'], filters: [{ name: 'JSON', extensions: ['json'] }] });
       if (selected.canceled) return;
-      const text = readFileSync(selected.filePaths[0], 'utf8');
-      const pair = JSON.parse(text);
-      const url = new URL(pair.url);
-      if (pair.v !== 1 || url.protocol !== 'wss:' || url.username || url.password || url.search || url.hash || typeof pair.token !== 'string' || pair.token.length < 32 || typeof pair.ca !== 'string' || !pair.ca.includes('BEGIN CERTIFICATE')) throw new Error('invalid_pairing');
-      writeFileSync(pairFile + '.tmp', safeStorage.encryptString(text), { mode: 0o600 });
-      renameSync(pairFile + '.tmp', pairFile);
-      loadPair();
+      importPairing(selected.filePaths[0]);
     });
     const dress = async () => { child?.send({ type: 'terminal:open-dress' }); };
     ipcMain.handle('terminal:dress', (event) => { if (!allowed(event)) throw new Error('forbidden'); return dress(); });
-    app.on('second-instance', open);
+    app.on('second-instance', (_, argv) => { try { importArgument(argv); } catch { /* Keep the existing pairing when import fails. */ } open(); });
     app.on('window-all-closed', () => {});
     app.whenReady().then(() => {
       mkdirSync(DATA, { recursive: true });
-      language = systemLanguage(app);
+      const requestedLanguage = process.env.COOPANION_SYSTEM_LANGUAGE;
+      language = require('./i18n/index.cjs').LANGUAGES.includes(requestedLanguage) ? requestedLanguage : systemLanguage(app);
       tray = new Tray(join(__dirname, 'icons', process.platform === 'win32' ? 'icon.ico' : 'icon.png'));
       tray.setToolTip(strings(language)[0]);
       tray.setContextMenu(Menu.buildFromTemplate([
@@ -87,6 +95,7 @@ if (process.argv.includes('--pet-host')) {
       child.on('message', (message) => {
         if (message?.type === 'terminal:ready') { address = message; loadPair(); }
         if (message?.type === 'terminal:open') open();
+        if (message?.type === 'terminal:chat') { open(); window.webContents.once('did-finish-load', () => window.webContents.send('terminal:show-chat')); window.webContents.send('terminal:show-chat'); }
         if (message?.type === 'terminal:quit') app.quit();
         if (message?.type === 'terminal:restart') { app.relaunch(); app.quit(); }
         if (message?.type === 'terminal:dress' && typeof message.url === 'string' && /^http:\/\/127\.0\.0\.1:\d+\/dress$/.test(message.url)) {
@@ -99,6 +108,7 @@ if (process.argv.includes('--pet-host')) {
       for (const [event, state] of [['lock-screen', { locked: true }], ['unlock-screen', { locked: false }], ['suspend', { suspended: true }], ['resume', { suspended: false }]]) {
         powerMonitor.on(event, () => child?.send({ type: 'terminal:state', state }));
       }
+      try { importArgument(process.argv); } catch { open(); }
       if (!existsSync(pairFile)) open();
     });
     let exitReady = false;

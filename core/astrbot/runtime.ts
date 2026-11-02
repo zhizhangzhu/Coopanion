@@ -11,6 +11,7 @@ import { TerminalHost, type HostConfig } from './host.ts';
 import { TerminalConnection } from './connection.ts';
 import { pairing, type Pairing, type TerminalState } from './protocol.ts';
 import { coreText } from '../i18n/index.ts';
+import type { StreamEvent } from 'cortico/protocol/open-responses/index.ts';
 
 export async function main(): Promise<void> {
   const root = process.env.ASTRBOT_TERMINAL_DATA;
@@ -38,6 +39,7 @@ export async function main(): Promise<void> {
       isPaused: () => state.dnd,
       setPaused: (paused) => { state.dnd = paused; config.dnd = paused; persist(); void connection?.refresh(); },
       openSettings: () => process.send?.({ type: 'terminal:open' }),
+      openChat: () => process.send?.({ type: 'terminal:chat' }),
       openDress: () => process.send?.({ type: 'terminal:dress', url: (pet as DesktopPetWorld | null)?.petState().dressUrl }),
       quit: () => process.send?.({ type: 'terminal:quit' }),
       quitLabel: () => coreText(language).quit,
@@ -69,6 +71,7 @@ export async function main(): Promise<void> {
     for (const extension of definitions.values()) await host.enable(extension);
     persist();
     const terminalHost = host;
+    const terminalConfig = config;
     const terminalPet = pet;
     const terminal = new TerminalConnection(pair, {
       state: () => {
@@ -76,11 +79,20 @@ export async function main(): Promise<void> {
         return { ...state, body: body?.connected === true, visible: body?.onDesktop === true };
       },
       catalog: () => terminalHost.catalog(),
-      call: (world, tool, arguments_, signal, attachments) => terminalHost.call(world, tool, arguments_, signal, attachments),
+      call: (world, tool, arguments_, signal, attachments, execution) => terminalHost.call(world, tool, arguments_, signal, attachments, execution),
       connected: (connected, reason) => { online = connected; lastError = connected ? '' : reason ?? ''; process.send?.({ type: 'terminal:status', online }); },
       error: (reason) => { lastError = reason; },
+      binding: (value) => {
+        if (typeof value.persona_id === 'string') { terminalConfig.name = value.persona_id; persist(); }
+      },
+      lifecycle: (value) => terminalHost.lifecycle(value),
+      output: (value) => { if (value.event && typeof value.event === 'object') terminalHost.output(value.event as StreamEvent); },
     }, join(root, 'devices', pair.device_id, 'journal.local.json'));
     connection = terminal;
+    terminalHost.onCognition = async (world, request, parentCallId) => {
+      const result = await terminal.request('cognition', { world, ...request, ...(parentCallId ? { parent_call_id: parentCallId } : {}) }, 90000);
+      return typeof result.text === 'string' ? { text: result.text } : { error: String(result.error ?? 'cognition_unavailable') };
+    };
     terminalHost.onEvent = (event) => { terminal.event(event); void terminal.refresh(true); };
     terminal.start();
   };
@@ -102,7 +114,7 @@ export async function main(): Promise<void> {
     }
     const reply = (value: unknown, status = 200) => { response.writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store' }); response.end(JSON.stringify(value)); };
     if (request.method === 'GET' && request.url === '/terminal/status') {
-      reply({ online, state, error: lastError, catalog: await host.catalog(), extensions: manager.list(language) });
+      reply({ online, paired: connection !== null, name: config.name, state, error: lastError, catalog: await host.catalog(), extensions: manager.list(language) });
     } else if (request.method === 'POST' && request.url === '/terminal/disconnect') {
       connection?.stop(); connection = null; host.onEvent = null; reply({ online: false });
     } else if (request.method === 'POST' && request.url === '/terminal/dnd') {
@@ -115,6 +127,32 @@ export async function main(): Promise<void> {
       reply([...definitions.keys()].map((id) => host.configuration(id, language)).filter(Boolean));
     } else if (request.method === 'POST' && request.url === '/terminal/restart') {
       reply({}); process.send?.({ type: 'terminal:restart' });
+    } else if (request.method === 'POST' && ['/terminal/chat/open', '/terminal/chat/poll', '/terminal/chat/send', '/terminal/chat/close', '/terminal/chat/blob', '/terminal/chat/shared', '/terminal/panel', '/terminal/secret'].includes(request.url ?? '')) {
+      let raw = '';
+      for await (const chunk of request) { raw += chunk; if (Buffer.byteLength(raw) > 2 * 1024 * 1024) { reply({ error: 'body_too_large' }, 413); return; } }
+      const body = JSON.parse(raw || '{}') as Record<string, unknown>;
+      const world = typeof body.world === 'string' ? body.world : 'desktop-pet';
+      const session = typeof body.session === 'string' ? body.session : '';
+      if (request.url === '/terminal/chat/open') reply(host.panelOpen(world, 'chat', language));
+      else if (request.url === '/terminal/chat/poll') reply({ frames: host.panels.poll(session) });
+      else if (request.url === '/terminal/chat/close') { host.panels.close(session); reply({}); }
+      else if (request.url === '/terminal/chat/send') {
+        if (!body.frame || typeof body.frame !== 'object' || Array.isArray(body.frame) || (!connection && !['hello', 'more'].includes(String((body.frame as Record<string, unknown>).t)))) throw new Error('chat_unavailable');
+        host.panels.send(session, body.frame as Record<string, unknown>); reply({});
+      } else if (request.url === '/terminal/chat/blob') {
+        const blob = typeof body.handle === 'string' ? host.readBlob(body.handle) : null;
+        if (!blob || blob.bytes.length > 1024 * 1024 || !['image/png','image/jpeg','image/webp','image/gif'].includes(blob.mime)) throw new Error('blob_not_available');
+        reply({ mime: blob.mime, base64: Buffer.from(blob.bytes).toString('base64') });
+      } else if (request.url === '/terminal/chat/shared') {
+        if (!connection) throw new Error('terminal_offline');
+        reply(await connection.request('query', { kind: 'history', before: body.before, limit: 50 }));
+      } else if (request.url === '/terminal/panel') {
+        if (typeof body.panel !== 'string' || typeof body.method !== 'string' || !Array.isArray(body.args)) throw new Error('invalid_panel_request');
+        reply(await host.invoke(world, body.panel, body.method, body.args, language));
+      } else {
+        if (typeof body.name !== 'string' || typeof body.value !== 'string') throw new Error('invalid_secret');
+        host.setSecret(world, body.name, body.value); reply({ configured: body.value !== '' });
+      }
     } else if (request.method === 'POST' && ['/terminal/extensions/install', '/terminal/extensions/remove', '/terminal/world'].includes(request.url ?? '')) {
       let raw = '';
       for await (const chunk of request) { raw += chunk; if (Buffer.byteLength(raw) > 65536) { reply({ error: 'body_too_large' }, 413); return; } }
@@ -134,24 +172,12 @@ export async function main(): Promise<void> {
         const definition = typeof id === 'string' ? definitions.get(id) : undefined;
         if (!definition || !id) throw new Error('unknown_world');
         const cfg = config.worlds[id] ??= definition.defaults();
-        if (typeof data.enabled === 'boolean') cfg.enabled = data.enabled;
         if (data.key !== undefined) {
-          const prefix = `worlds.${id}.`;
-          const schema = host.configuration(id, language)?.groups.flatMap((g) => Object.entries(g.schema.properties ?? {})).find(([key]) => key === data.key)?.[1];
-          const key = data.key;
-          if (!schema || !key.startsWith(prefix)) throw new Error('unknown_config_key');
-          const parts = key.slice(prefix.length).split('.');
-          if (parts.some((p) => !p || ['__proto__', 'prototype', 'constructor'].includes(p))) throw new Error('invalid_config_key');
-          const value = data.value;
-          if (schema.type === 'boolean' ? typeof value !== 'boolean' : schema.type === 'integer' ? typeof value !== 'number' || !Number.isSafeInteger(value)
-            : schema.type === 'number' ? typeof value !== 'number' || !Number.isFinite(value) : schema.type === 'string' ? typeof value !== 'string' || value.length > 4096 : true) throw new Error('invalid_config_value');
-          if (schema.enum && !schema.enum.includes(value as never)) throw new Error('invalid_config_option');
-          if (typeof value === 'number' && ((typeof schema.minimum === 'number' && value < schema.minimum) || (typeof schema.maximum === 'number' && value > schema.maximum))) throw new Error('config_out_of_range');
-          let target = cfg as unknown as Record<string, unknown>;
-          for (const part of parts.slice(0, -1)) { if (!target[part] || typeof target[part] !== 'object' || Array.isArray(target[part])) target[part] = {}; target = target[part] as Record<string, unknown>; }
-          target[parts.at(-1)!] = value;
+          host.configure(id, data.key, data.value, language);
         }
-        persist(); await host.enable(definition); await connection?.refresh(true); reply({});
+        const before = cfg.enabled;
+        try { if (typeof data.enabled === 'boolean') cfg.enabled = data.enabled; persist(); } catch (error) { cfg.enabled = before; throw error; }
+        await host.enable(definition); await connection?.refresh(true); reply({});
       }
     } else reply({ error: 'unknown_route' }, 404);
     }

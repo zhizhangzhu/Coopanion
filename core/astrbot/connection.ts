@@ -9,9 +9,12 @@ interface Journal { events: Frame[]; calls: Record<string, { status: string; tex
 export interface TerminalDelegate {
   state(): TerminalState;
   catalog(): Promise<Record<string, unknown>>;
-  call(world: string, tool: string, args: Record<string, unknown>, signal: AbortSignal, attachments?: unknown): Promise<Record<string, unknown>>;
+  call(world: string, tool: string, args: Record<string, unknown>, signal: AbortSignal, attachments?: unknown, execution?: { id: string; parent_call_id?: string }): Promise<Record<string, unknown>>;
   connected?(online: boolean, reason?: string): void;
   error?(reason: string): void;
+  binding?(value: Record<string, unknown>): void;
+  lifecycle?(value: Record<string, unknown>): void;
+  output?(value: Record<string, unknown>): void;
 }
 
 export class TerminalConnection {
@@ -28,6 +31,7 @@ export class TerminalConnection {
   private catalogAt = 0;
   private catalogDirty = true;
   private lastError = '';
+  private readonly requests = new Map<string, { resolve: (value: Record<string, unknown>) => void; reject: (reason: Error) => void; timer: ReturnType<typeof setTimeout> }>();
   private readonly controllers = new Map<string, AbortController>();
   private readonly journal: Journal;
   private pair: Pairing;
@@ -43,9 +47,23 @@ export class TerminalConnection {
     writeFileSync(this.journalFile + '.tmp', JSON.stringify(this.journal), { mode: 0o600 });
     renameSync(this.journalFile + '.tmp', this.journalFile);
   }
+  request(kind: 'query' | 'cognition', payload: Record<string, unknown>, timeout = 15000): Promise<Record<string, unknown>> {
+    if (!this.welcomed || this.stopped) return Promise.reject(new Error('terminal_offline'));
+    if (this.requests.size >= 8) return Promise.reject(new Error('too_many_terminal_requests'));
+    const id = randomUUID();
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => { this.requests.delete(id); reject(new Error('remote_request_timeout')); }, timeout);
+      this.requests.set(id, { resolve, reject, timer }); this.send(frame(kind, id, payload));
+    });
+  }
+  private interruptRequests(): void {
+    for (const request of this.requests.values()) { clearTimeout(request.timer); request.reject(new Error('terminal_disconnected')); }
+    this.requests.clear();
+  }
   start(): void { this.stopped = false; this.connect(); }
   stop(): void {
     this.stopped = true;
+    this.interruptRequests();
     if (this.welcomed) this.send(frame('state', randomUUID(), {
       ...this.delegate.state(), ready: false, body: false, visible: false, locked: false, suspended: false,
     }));
@@ -96,6 +114,7 @@ export class TerminalConnection {
     socket.on('close', () => {
       if (this.socket !== socket) return;
       this.welcomed = false;
+      this.interruptRequests();
       if (this.heartbeat) clearInterval(this.heartbeat);
       for (const c of this.controllers.values()) c.abort();
       this.delegate.connected?.(false, this.lastError);
@@ -131,6 +150,7 @@ export class TerminalConnection {
     if (this.socket !== socket) return;
     if (message.type === 'welcome') {
       if (message.payload.device_id !== this.pair.device_id) throw new Error('device_binding_mismatch');
+      this.delegate.binding?.(message.payload);
       this.welcomed = true;
       this.advertised = '';
       this.lastState = '';
@@ -142,6 +162,13 @@ export class TerminalConnection {
       for (const event of this.journal.events) this.send(event);
       this.heartbeat = setInterval(() => { this.send(frame('ping', randomUUID(), {})); void this.refresh(); }, 20000);
       this.delegate.connected?.(true);
+    } else if (message.type === 'query_result' || message.type === 'cognition_result') {
+      const pending = this.requests.get(message.id);
+      if (pending) { clearTimeout(pending.timer); this.requests.delete(message.id); pending.resolve(message.payload); }
+    } else if (message.type === 'lifecycle') {
+      this.delegate.lifecycle?.(message.payload);
+    } else if (message.type === 'output') {
+      this.delegate.output?.(message.payload);
     } else if (message.type === 'reconcile') {
       const ids = message.payload.ids;
       if (!Array.isArray(ids) || ids.length > 100 || ids.some((id) => typeof id !== 'string')) throw new Error('invalid_reconciliation');
@@ -173,7 +200,7 @@ export class TerminalConnection {
       this.journal.calls[message.id] = { status: 'running' };
       this.save();
       let result: Record<string, unknown>;
-      try { result = await this.delegate.call(p.world, p.tool, p.arguments as Record<string, unknown>, controller.signal, p.attachments); }
+      try { result = await this.delegate.call(p.world, p.tool, p.arguments as Record<string, unknown>, controller.signal, p.attachments, { id: message.id, ...(typeof p.parent_call_id === 'string' ? { parent_call_id: p.parent_call_id } : {}) }); }
       catch { result = { status: 'unknown', text: 'tool_execution_outcome_unconfirmed' }; }
       this.journal.calls[message.id] = result as Journal['calls'][string];
       this.save();
