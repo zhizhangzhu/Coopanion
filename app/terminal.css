@@ -1,0 +1,10 @@
+:root { color-scheme: light dark; font: 16px/1.6 system-ui,sans-serif; }
+body { margin: 0; background: light-dark(#f6f7fa,#171a20); color: light-dark(#20283a,#edf0f7); }
+main { max-width: 720px; margin: 38px auto; padding: 0 30px; }
+h1 { font-size: 28px; } h2 { font-size: 18px; margin-top: 32px; }
+#actions { display: flex; flex-wrap: wrap; gap: 10px; }
+button { font: inherit; cursor: pointer; border: 1px solid #8996ae; border-radius: 8px; padding: 9px 15px; background: light-dark(white,#282e3b); color: inherit; }
+button:focus-visible { outline: 3px solid #729ee4; outline-offset: 3px; }
+pre { white-space: pre-wrap; overflow-wrap: anywhere; font: 14px/1.6 system-ui,sans-serif; }
+input, select { font: inherit; max-width: 100%; padding: 5px; }
+section { margin-top: 28px; } label { display: inline-block; }

@@ -1,3 +1,7 @@
+<!-- Terminal behavior: app/terminal.cjs and core/astrbot/. -->
+
+This fork includes an AstrBot-connected Windows terminal. See [terminal setup and support boundaries](docs/ASTRBOT_TERMINAL.md).
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/banner-dark.svg">

@@ -1,3 +1,7 @@
+<!-- Terminal behavior: app/terminal.cjs and core/astrbot/. -->
+
+本 fork 新增连接 AstrBot 的 Windows 桌宠终端，详见[终端运行与支持范围](docs/ASTRBOT_TERMINAL.md)。
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/banner-dark.svg">
