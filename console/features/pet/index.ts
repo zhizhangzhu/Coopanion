@@ -153,6 +153,9 @@ async function mount(ctx: PageContext): Promise<void> {
   const user = ui.input();
   void invokePanel<{ defaultUser?: string }>(PET_PAGE, 'pet', 'state', [], opts).then((s) => { if (s?.defaultUser) user.placeholder = s.defaultUser; }).catch(() => {});
   const botName = ui.input();
+  if (window.astrbotTerminal) {
+    for (const [input, field] of [[user, 'user_name'], [botName, 'bot_name']] as const) { input.disabled = true; input.readOnly = true; input.dataset.astrbotManaged = field; input.title = 'AstrBot'; }
+  }
   botName.placeholder = DEFAULT_NAME;
   const autoUpdate = ui.checkbox(S.autoUpdate, { onChange: (on) => void save(AUTO_UPDATE_KEY, on, STATS_GROUP) });
   const roam = ui.segmented([
@@ -578,12 +581,14 @@ async function mount(ctx: PageContext): Promise<void> {
   }
   signal.addEventListener('abort', () => { if (scaleTimer) clearTimeout(scaleTimer); });
   const saveUser = () => {
+    if (window.astrbotTerminal) return;
     const name = user.value.trim();
     if (name && name !== user.dataset.saved) { user.dataset.saved = name; void save(KEYS.user, name); }
   };
   user.addEventListener('change', saveUser);
   user.addEventListener('keydown', (e) => { if (e.key === 'Enter') user.blur(); });
   botName.addEventListener('change', () => {
+    if (window.astrbotTerminal) return;
     const name = botName.value.trim() || DEFAULT_NAME;
     botName.value = name;
     if (name === botName.dataset.saved) return;

@@ -290,3 +290,6 @@ input:where([type="checkbox"], [type="radio"]):where(:not(.pet-switch, .companio
 .cua-risk-lead { margin: 0 0 10px; color: var(--ink); }
 .cua-risks { margin: 0 0 12px; padding-left: 1.3em; list-style: disc; display: flex; flex-direction: column; gap: 6px; color: var(--danger); line-height: 1.55; }
 .cua-risk-note { margin: 0 0 14px; font-size: 13px; color: var(--ink-soft); }
+
+/* Values shared with the paired AstrBot are display-only. */
+input[data-astrbot-managed]:disabled { opacity: .6; cursor: not-allowed; color: var(--muted); }

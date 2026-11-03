@@ -4,7 +4,7 @@ export const S: Partial<typeof en> = {
   // advanced/features/prompts/index.ts
   button: "Apagar conversa e reiniciar",
   title: "Apagar a conversa atual e reiniciar?",
-  body: "Salva as alterações desta página, apaga o contexto da conversa atual de Coo e reinicia com o prompt do sistema atualizado. A exclusão não pode ser desfeita. Memory e a personalidade são mantidos.",
+  body: "Salva as alterações desta página, apaga o contexto da conversa atual de Bot e reinicia com o prompt do sistema atualizado. A exclusão não pode ser desfeita. Memory e a personalidade são mantidos.",
   clearing: "Iniciando uma nova conversa…",
   cleared: "Nova conversa iniciada",
   // release.ts

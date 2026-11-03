@@ -2,7 +2,7 @@ import type { en } from './strings.ts';
 
 export const S: Partial<typeof en> = {
   title: '電腦操作',
-  enabled: '讓 Coo 操作這台電腦',
+  enabled: '讓 Bot 操作這台電腦',
   control: '允許操作滑鼠和鍵盤',
   controlHint: '關閉時只能查看螢幕。',
   permission: '詢問時機',
@@ -20,11 +20,11 @@ export const S: Partial<typeof en> = {
   saveFailed: (why: string) => `沒有儲存：${why}`,
   enabledLabel: '使用電腦',
   controlLabel: '滑鼠與鍵盤',
-  riskTitle: '讓 Coo 操作這台電腦？',
-  riskLead: '開啟後，Coo 將會觀察你的螢幕，操作你的滑鼠和鍵盤。',
+  riskTitle: '讓 Bot 操作這台電腦？',
+  riskLead: '開啟後，Bot 將會觀察你的螢幕，操作你的滑鼠和鍵盤。',
   riskDanger: '這可能非常危險',
   riskAfter: '，請確認你理解以下內容：',
-  risks: ['螢幕截圖（可能包含你的隱私內容，如聊天紀錄）將會傳送給上游模型服務', 'Coo 可能會點錯地方、打錯字，或者進入錯誤的視窗。時刻確保你能隨時觀察並打斷 Coo。', '付款、密碼一類涉及敏感資訊、現實操作或無法撤回的操作，請不要交給 Coo。'],
-  riskNote: 'Coo 會在你操作滑鼠或鍵盤時自動停止。你可以隨時關閉這個功能。',
+  risks: ['螢幕截圖（可能包含你的隱私內容，如聊天紀錄）將會傳送給上游模型服務', 'Bot 可能會點錯地方、打錯字，或者進入錯誤的視窗。時刻確保你能隨時觀察並打斷 Bot。', '付款、密碼一類涉及敏感資訊、現實操作或無法撤回的操作，請不要交給 Bot。'],
+  riskNote: 'Bot 會在你操作滑鼠或鍵盤時自動停止。你可以隨時關閉這個功能。',
   riskOk: '開啟',
 };

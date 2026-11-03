@@ -1,3 +1,12 @@
+<!-- Terminal behavior: app/terminal.cjs and core/astrbot/. -->
+
+本 fork 新增连接 AstrBot 的 Windows 桌宠终端，详见[终端运行与支持范围](docs/ASTRBOT_TERMINAL.md)。
+
+AstrBot 终端提供独立聊天窗口、共享历史分页、复杂 World 配置和 Windows 加密扩展密钥；扩展认知由服务器统一调度并计入预算。
+AstrBot 版本直接复用原生窗口和完整控制台 UI，包括习惯、装扮、语音、聊天、主题和扩展市场；人格、记忆与模型决策统一由 AstrBot 提供。
+电脑操作默认关闭；Bot 可以打开习惯页的对应设置，启用后的鼠标与键盘操作遵循你选择的确认方式。
+纯表情包气泡按图片收紧高度，不再预留空白文字行。
+连续桌宠动作会先更新能力信息，再报告前一步完成。
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/banner-dark.svg">
@@ -269,3 +278,9 @@ Coopanion 用 [Cortico](https://github.com/Pal-AI-Lab/Cortico) 组装：Cortico 
 [AGPL-3.0-or-later](LICENSE)，按第 7 条附加许可：允许与 Steam 版加载的 Steamworks API 库链接。0.1.10 及之前发布的版本是 MIT。框架 Cortico 是 MIT，以子模块随附。提 PR 见 [CONTRIBUTING.md](CONTRIBUTING.md)，首次提交需要签[贡献者许可协议](CLA.md)。
 
 DeepSeek 大肥鱼形象（`packages/cortico-world-desktop-pet/web/whale/` 的贴图）不在 AGPL 授权范围内，来源与各家标志的说明见[桌宠 World 的第三方声明](packages/cortico-world-desktop-pet/THIRD_PARTY_NOTICES.md)。随附或运行时下载的第三方组件：Electron（MIT）、Cortico（MIT）、sherpa-onnx（Apache-2.0）、FunASR 的 SenseVoiceSmall 模型（[FunASR 模型开源协议](https://github.com/modelscope/FunASR/blob/main/MODEL_LICENSE)，用时下载）、OpenAI 的 Whisper small 模型（MIT，用时下载）、koffi（MIT）、jpeg-js（BSD-3-Clause）、pnpm（MIT）；各家模型服务的标志取自 [lobe-icons](https://github.com/lobehub/lobe-icons)（MIT，标志归各自公司所有，只用于标明服务）。
+
+AstrBot 版的 Bot 名字和用户称呼从服务端同步并只读显示；共享身份请在 AstrBot 修改。
+
+AstrBot 终端同步已绑定 Bot 的 QQ 头像，区分服务器接收状态与本地等待；图片和 GIF 回复同时显示在聊天页与身体气泡中。共享身份和头像由服务端管理。无效动作标记不会另起气泡，书名号和成对引号内的动作保留同一句文字。
+
+0.3.3 在消息上方显示原始日期和时间。Windows 熄屏、合盖、锁屏、休眠时，新主动交流改走 QQ；手动免打扰仍对两端生效。客户端心跳维护当前可达状态，不调用模型。

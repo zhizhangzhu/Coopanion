@@ -103,7 +103,7 @@ const zh = {
   sayEmpty: '[pet_say 没执行] 脚本是空的,也没带图片。不想说话就不调用。',
   sayReceipt: (r: SayReceipt) => `${r.waitSec > .5 ? `已排队,前面还有约 ${Math.round(r.waitSec)} 秒` : '已开始显示'},这段约 ${Math.round(r.selfSec)} 秒。`
     + (r.chatOpen ? '对话页开着,这段也显示在那里。' : '')
-    + (r.images ? `附带的 ${r.images} 张图片只显示在对话页。` : '')
+    + (r.images ? `附带的 ${r.images} 张图片也显示在身体气泡中。` : '')
     + (r.replaced !== null ? `替换了还没回答的提问「${r.replaced}」。` : '')
     + (r.dropped.length ? `\n[执行参数] 当前形象的词表里没有这些标记,已略过:${r.dropped.join('、')}。` : ''),
 
@@ -158,7 +158,7 @@ const zh = {
   /** `{{pet.self}}` while the person allows no change. */
   selfNone: (user: string) => `${user}在「习惯」页把「自主配置权限」设成了「禁止」,现在这些你都改不了,\`pet_quiet\` 也用不了。`,
   /** `{{pet.chat}}`, when the app has a chat page. */
-  chatPage: (_user: string) => '应用的「对话」页按时间列出这些气泡、对方的话,以及你两句话之间调用过的工具名;对方也能在那里打字、发图片(同样是 `[typed]` 事件,图片接在正文后),回答 `pet_ask`。`pet_say` 带的 `images` 只显示在对话页,头顶气泡不显示。',
+  chatPage: (_user: string) => '应用的「对话」页按时间列出这些气泡、对方的话,以及你两句话之间调用过的工具名;对方也能在那里打字、发图片(同样是 `[typed]` 事件,图片接在正文后),回答 `pet_ask`。`pet_say` 带的 `images` 同时显示在对话页和身体气泡中，GIF 保留动画。',
   /** `{{pet.cua}}` while computer use is off on a system that runs it. */
   cuaOff: (user: string, canOpen: boolean) => `## 电脑操作\n\n电脑操作现在关着:你看不到屏幕,也动不了鼠标和键盘。${user}想让你看屏幕或帮忙操作电脑时,可以提出打开它:在设置窗口「习惯」页的「电脑操作」一节,打开前那里会讲清风险。` +
     (canOpen ? `${user}同意去打开的话,\`pet_cua_open_settings\` 把设置窗口直接打开到那里。` : ''),
@@ -229,7 +229,7 @@ const en: typeof zh = {
       ? `Queued behind about ${Math.round(r.waitSec)} s of earlier lines; this one takes about ${Math.round(r.selfSec)} s.`
       : `Showing now; this one takes about ${Math.round(r.selfSec)} s.`,
     r.chatOpen ? 'The chat page is open and shows it too.' : '',
-    r.images ? `The ${r.images} image${r.images > 1 ? 's' : ''} with it show only on the chat page.` : '',
+    r.images ? `The ${r.images} image${r.images > 1 ? 's' : ''} with it also appear in your body’s speech bubble.` : '',
     r.replaced !== null ? `Replaced the unanswered question "${r.replaced}".` : '',
   ].filter(Boolean).join(' ')
     + (r.dropped.length ? `\n[arguments] These markers are not in the current figure's vocabulary and were skipped: ${r.dropped.join(', ')}.` : ''),
@@ -281,7 +281,7 @@ const en: typeof zh = {
     : `Right now these take effect at once: ${direct.join(', ')}; these are first asked of ${user} in a bubble: ${asked.join(', ')}.`),
   selfNone: (user) => `${user} set "Self-adjustment" to "Off" on the Habits page, so right now you can change none of these, and \`pet_quiet\` does not work either.`,
   // the English template puts these right after a sentence, so they start with a space
-  chatPage: (user) => ` The app's Chat page lists these bubbles in time order, with what ${user} said and the names of the tools you called between two lines; ${user} can also type and send images there (they arrive as \`[typed]\` events too, images after the text) and answer \`pet_ask\`. The \`images\` of \`pet_say\` show only on the Chat page, not in the bubble.`,
+  chatPage: (user) => ` The app's Chat page lists these bubbles in time order, with what ${user} said and the names of the tools you called between two lines; ${user} can also type and send images there (they arrive as \`[typed]\` events too, images after the text) and answer \`pet_ask\`. The \`images\` of \`pet_say\` show on both the Chat page and your body bubble; animated GIFs keep their animation.`,
   cuaOff: (user, canOpen) => `## Computer use\n\nComputer use is off: you cannot see the screen or use the mouse and keyboard. When ${user} wants you to look at the screen or help operate the computer, you can suggest turning it on: the Computer use section of the Habits page in the settings window, which explains the risks before it turns on.` +
     (canOpen ? ` If ${user} agrees to turn it on, \`pet_cua_open_settings\` opens the settings window right there.` : ''),
   cuaSettingsOpened: (user) => `The settings window is open at Computer use, showing what it risks; once ${user} clicks to turn it on, the computer-use tools are yours from the next message.`,

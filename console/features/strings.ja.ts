@@ -4,7 +4,7 @@ export const S: Partial<typeof en> = {
   // advanced/features/prompts/index.ts
   button: "会話を消去して再開",
   title: "現在の会話を消去して再開しますか？",
-  body: "このページの編集を保存し、Coo の現在の会話の文脈を消去して、更新したシステムプロンプトで再開します。消去は取り消せません。Memory と人格は保持します。",
+  body: "このページの編集を保存し、Bot の現在の会話の文脈を消去して、更新したシステムプロンプトで再開します。消去は取り消せません。Memory と人格は保持します。",
   clearing: "新しい会話を開始中…",
   cleared: "新しい会話を開始しました",
   // release.ts

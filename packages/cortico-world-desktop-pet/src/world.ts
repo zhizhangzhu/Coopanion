@@ -201,6 +201,7 @@ export interface PetDialogHandle {
 export type ConfirmResult = 'yes' | 'always' | 'no' | 'dismissed' | 'timeout' | 'unavailable';
 
 export interface DesktopPetWorldOptions {
+  confirmPresentation?: boolean;
   cfg: DesktopPetConfigSection;
   timezone: string;
   persist: (patch: DeepPartial<DesktopPetConfigSection>) => void;
@@ -333,6 +334,7 @@ function draftImages(raw: unknown): DraftImage[] {
 
 export class DesktopPetWorld implements World {
   readonly id = DESKTOP_PET_ID;
+  private presentations = new Map<string, { resolve: () => void; reject: (reason: Error) => void }>();
   private host: WorldHost | null = null;
   private log: Logger | null = null;
   private readonly cfg: DesktopPetConfigSection;
@@ -1076,6 +1078,14 @@ export class DesktopPetWorld implements World {
 
   private onPage(msg: PageMessage): void {
     switch (msg.t) {
+      case 'presentation_failed': {
+        if (typeof msg.id === 'string') this.presentations.get(msg.id)?.reject(new Error('image_presentation_failed'));
+        return;
+      }
+      case 'presented': {
+        if (typeof msg.id === 'string') this.presentations.get(msg.id)?.resolve();
+        return;
+      }
       case 'figure': return this.onFigure(msg);
       case 'hello': {
         const s = msg.screen as { w?: unknown; h?: unknown } | undefined;
@@ -1229,6 +1239,8 @@ export class DesktopPetWorld implements World {
   }
 
   private onPageGone(): void {
+    for (const pending of this.presentations.values()) pending.reject(new Error('presentation_unconfirmed'));
+    this.presentations.clear();
     this.log?.info('桌宠页面断开');
     for (const [id, d] of this.dialogs) { d({ unavailable: true }); this.dialogs.delete(id); }
     for (const [id, w] of this.walks) { clearTimeout(w.timer); w.resolve(this.t.walkWindowGone); this.walks.delete(id); }
@@ -1727,8 +1739,8 @@ export class DesktopPetWorld implements World {
 
   tools(): ToolDef[] {
     const handlers: Record<string, ToolDef['handler']> = {
-      pet_say: (args) => this.say(args),
-      pet_ask: (args) => this.askUser(args),
+      pet_say: (args, ctx) => this.say(args, ctx),
+      pet_ask: (args, ctx) => this.askUser(args, ctx),
       pet_move_to: (args, ctx) => this.moveTo(args, ctx),
       pet_act: (args) => this.act(args),
       pet_set: (args) => this.setSettings(args),
@@ -1746,35 +1758,58 @@ export class DesktopPetWorld implements World {
     return { text: this.t.notConnected(tool, detail, this.userName), failed: true };
   }
 
-  private async say(args: Record<string, unknown>): Promise<ToolOutcome> {
+  private async confirmPresented(id: string, ctx?: ToolCallContext): Promise<void> {
+    if (!this.opts.confirmPresentation) return;
+    let abort: (() => void) | undefined;
+    try {
+      await new Promise<void>((resolve, reject) => {
+        this.presentations.set(id, { resolve, reject });
+        abort = () => reject(new Error('presentation_unconfirmed'));
+        ctx?.signal?.addEventListener('abort', abort, { once: true });
+        if (ctx?.signal?.aborted) abort();
+      });
+    } finally {
+      if (abort) ctx?.signal?.removeEventListener('abort', abort);
+      this.presentations.delete(id);
+    }
+  }
+
+  private async say(args: Record<string, unknown>, ctx?: ToolCallContext): Promise<ToolOutcome> {
     const script = typeof args.script === 'string' ? args.script : '';
     const shown = this.shownImages(args.images);
     if (!shown.ok) return { text: shown.reason, failed: true };
     const { beats, dropped } = parseScript(script, this.vocab());
     const spoken = beats.some((b) => b.text || b.actions.length || b.anchors.length);
     if (!spoken && shown.blobs.length === 0) return { text: this.t.sayEmpty, failed: true };
-    if (spoken && !this.server.sendPet({ t: 'say', id: nextId('s'), beats })) return this.notConnected('pet_say');
+    const id = nextId('s');
+    const images = shown.blobs.map((blob) => ({ src: 'data:'+blob.mime+';base64,'+Buffer.from(blob.bytes).toString('base64') }));
+    const bubbleBeats = beats.length ? beats : [{ text: '', actions: [], anchors: [] }];
+    const bodySent = this.server.sendPet({ t: 'say', id, beats: bubbleBeats, images });
+    if (spoken && !bodySent) return this.notConnected('pet_say');
+    const presented = bodySent ? this.confirmPresented(id, ctx) : Promise.resolve();
     void this.closeActivity();
     void this.record({ kind: 'say', beats: beats.map((b) => ({ text: b.text, ...moodOf(b.actions, this.vocab()) })) }, beats.map((b) => b.text).join(''), shown.blobs);
-    if (!spoken) return { text: this.t.imagesShown(shown.blobs.length, this.chat.size > 0) };
+    if (!spoken && !bodySent) return { text: this.t.imagesShown(shown.blobs.length, this.chat.size > 0) };
     const now = Date.now();
     const selfSec = estimateSeconds(beats, this.cfg.window.bubbleSpeed, this.cfg.speech.enabled ? speechTextSteps : undefined);
     const waitSec = Math.max(0, (this.busyUntil - now) / 1000);
     this.busyUntil = Math.max(now, this.busyUntil) + selfSec * 1000;
     const replaced = this.ask?.question ?? null;
     if (this.ask) this.setAsk(null);
-    return { text: this.t.sayReceipt({ waitSec, selfSec, chatOpen: this.chat.size > 0, replaced, dropped, images: shown.blobs.length }) };
+    await presented;
+    return Object.assign({ text: this.t.sayReceipt({ waitSec, selfSec, chatOpen: this.chat.size > 0, replaced, dropped, images: shown.blobs.length }) },
+      { presentationConfirmed: this.opts.confirmPresentation === true });
   }
 
   /**
    * The images of a `pet_say`: each handle is read through the host and attached again as bytes,
    * so the stored line keeps the picture it showed after a Memory file changes.
    */
-  private shownImages(raw: unknown): { ok: true; blobs: BlobInput[] } | { ok: false; reason: string } {
+  private shownImages(raw: unknown): { ok: true; blobs: Array<Extract<BlobInput, { bytes: unknown }>> } | { ok: false; reason: string } {
     if (raw === undefined) return { ok: true, blobs: [] };
     if (!Array.isArray(raw) || raw.some((h) => typeof h !== 'string')) return { ok: false, reason: this.t.imagesNotHandles };
     if (raw.length > IMAGES_MAX) return { ok: false, reason: this.t.tooManyImages(IMAGES_MAX) };
-    const blobs: BlobInput[] = [];
+    const blobs: Array<Extract<BlobInput, { bytes: unknown }>> = [];
     for (const [i, handle] of (raw as string[]).entries()) {
       const got = this.host?.blob(handle);
       if (!got) return { ok: false, reason: this.t.imageMissing(handle) };
@@ -1784,7 +1819,7 @@ export class DesktopPetWorld implements World {
     return { ok: true, blobs };
   }
 
-  private async askUser(args: Record<string, unknown>): Promise<ToolOutcome> {
+  private async askUser(args: Record<string, unknown>, ctx?: ToolCallContext): Promise<ToolOutcome> {
     const question = typeof args.question === 'string' ? args.question.trim() : '';
     const raw = Array.isArray(args.options) ? args.options : [];
     const optionMax = capFor(ASK_OPTION_MAX, this.appLanguage);
@@ -1794,11 +1829,14 @@ export class DesktopPetWorld implements World {
     if (options.length === 0 && !allowOwn) return { text: this.t.askNoWay, failed: true };
     const id = nextId('a');
     if (!this.server.sendPet({ t: 'ask', id, question, options, own: allowOwn })) return this.notConnected('pet_ask');
+    const presented = this.confirmPresented(id, ctx);
     const replaced = this.ask?.question ?? null;
     this.setAsk({ id, question, options });
     void this.closeActivity();
     void this.record({ kind: 'ask', askId: id, question, options, own: allowOwn }, question);
-    return { text: this.t.askReceipt({ replaced, cut: raw.length > 3, chatOpen: this.chat.size > 0 }) };
+    await presented;
+    return Object.assign({ text: this.t.askReceipt({ replaced, cut: raw.length > 3, chatOpen: this.chat.size > 0 }) },
+      { presentationConfirmed: this.opts.confirmPresentation === true });
   }
 
   /**

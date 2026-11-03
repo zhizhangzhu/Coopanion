@@ -4,7 +4,7 @@
 import { APP_CHANNEL, APP_VERSION } from '../app-version.ts';
 import { S } from './strings.ts';
 
-const REPO_URL = 'https://github.com/Pal-AI-Lab/Coopanion';
+const REPO_URL = window.astrbotTerminal ? 'https://github.com/zhizhangzhu/Coopanion' : 'https://github.com/Pal-AI-Lab/Coopanion';
 const RELEASES_URL = `${REPO_URL}/releases/latest`;
 
 /** 更新器的一步(app/updater.cjs)。 */
@@ -15,7 +15,7 @@ declare global {
     coopanionUpdate?: { step(): UpdateStep | null; onStep(listener: (step: UpdateStep | null) => void): () => void };
   }
 }
-const RELEASE_API = 'https://api.github.com/repos/Pal-AI-Lab/Coopanion/releases/latest';
+const RELEASE_API = window.astrbotTerminal ? 'https://api.github.com/repos/zhizhangzhu/Coopanion/releases/latest' : 'https://api.github.com/repos/Pal-AI-Lab/Coopanion/releases/latest';
 /** 与 Cortico WebUI 查框架 Release 同一时限。 */
 const RELEASE_TIMEOUT_MS = 15_000;
 

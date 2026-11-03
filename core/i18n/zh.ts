@@ -8,10 +8,10 @@ export default {
   /** 「习惯」页与高级设置里 Coopanion 自己的设置项 */
   settings: {
     autoUpdate: { title: "自动更新", description: "自动下载并在退出时安装更新。关闭后立即停止检查和下载，已下载的更新也不会自动安装。" },
-    language: { title: '语言', description: '界面和 Coo 说话都使用这种语言，修改后立即生效。' },
+    language: { title: '语言', description: '界面和 Bot 说话都使用这种语言，修改后立即生效。' },
     telemetry: { title: '匿名使用统计', description: '发送不含对话内容的使用次数与设置，帮助改进 Coopanion。字段见 docs/TELEMETRY.md。' },
     contextRing: { title: '上下文圆环', description: '在对话页输入框显示一个圆环，表示离整理之前的对话还有多远。' },
-    roundsSoft: { title: '收尾提醒', suffix: '次', description: '单次唤醒请求模型达到此次数时，提醒 Coo 完成当前任务后结束本轮。' },
+    roundsSoft: { title: '收尾提醒', suffix: '次', description: '单次唤醒请求模型达到此次数时，提醒 Bot 完成当前任务后结束本轮。' },
     roundsHard: { title: '单次唤醒上限', suffix: '次', description: '单次唤醒最多请求模型的次数，达到后结束本轮。' },
   },
 
@@ -44,7 +44,7 @@ export default {
   /** 左栏里应用通知这个 World 的名字 */
   noticeLabel: '应用通知',
 
-  /** 状态气泡:Coo 正在用的工具 */
+  /** 状态气泡:Bot 正在用的工具 */
   status: {
     read: '在查看', browse: '在翻阅', memory: '记忆', find: '在查找', search: '在搜索', write: '在写入', edit: '在修改', append: '在追加',
     delete: '在删除', moveFile: '在移动', save: '在保存', screen: '在查看屏幕', windows: '在查看打开的窗口', rightClick: '在右击', doubleClick: '在双击', click: '在点击',
@@ -62,19 +62,19 @@ export default {
     note: (figure: string, preset: string) => `桌宠更换为${figure}的「${preset}」时自动换上`,
   },
 
-  /** 启动引导:第一次启动时 Coo 在气泡里一步步说的话 */
+  /** 启动引导:第一次启动时 Bot 在气泡里一步步说的话 */
   guide: {
     /** 「你是从哪里认识我的?」的回答与统计里的 id;最后一项是跳过。id 见 docs/TELEMETRY.md */
     sources: [['B站', 'bilibili'], ['小红书', 'xiaohongshu'], ['抖音', 'douyin'], ['Steam', 'steam'], ['GitHub', 'github'], ['朋友推荐', 'friend'], ['其他', 'other'], ['不告诉你', 'skip']] as ReadonlyArray<readonly [label: string, id: string]>,
-    hello: '你好呀！我是 Coo，以后就住在你屏幕的底边啦，库...',
-    helloReply: '你好，Coo！',
+    hello: '你好呀！我是 Bot，以后就住在你屏幕的底边啦，库...',
+    helloReply: '你好，Bot！',
     askName: '我该怎么称呼你？',
     nameSend: '就这么叫',
     gotName: (name: string) => `${name}，记住啦！`,
     askSource: '你是从哪里认识我的？',
     sourceThanks: '原来是这样，库...',
     askPersona: '你觉得我应该是...',
-    /** 人设卡片:卡片上的字,点到时 Coo 说的话 */
+    /** 人设卡片:卡片上的字,点到时 Bot 说的话 */
     personas: {
       coo: { label: '小小的、好奇的', line: '这是什么？我凑过去看一眼，库...' },
       grail: { label: '黏人的、贪心的', line: '你在吃什么呀？也分我一口嘛，库...' },
@@ -86,7 +86,7 @@ export default {
     /** 确认按钮旁的一行;`dress` 是设置窗口里装扮页的名字,画在图标后 */
     dressHint: { text: '配色可以在 装扮 中替换', dress: '装扮' },
     askRoam: '平时我该安静一点，还是活泼一点？点一下，看看我会怎样。',
-    /** 三张卡片:名字、活跃程度、点到时 Coo 说的话 */
+    /** 三张卡片:名字、活跃程度、点到时 Bot 说的话 */
     roam: {
       off: { label: '不乱动', level: '低', line: '那我就乖乖站着，你叫我我再动。' },
       calm: { label: '多待着', level: '中', line: '我会时不时溜达一圈，大多时候待着。' },

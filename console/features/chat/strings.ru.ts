@@ -28,6 +28,9 @@ export const S: Partial<typeof en> = {
   contextLast: (when: string) => `В последний раз приведён в порядок: ${when}`,
   paused: 'На паузе · сообщения дойдут после продолжения',
   queued: (bot: string) => `В очереди; ${bot} прочитает после этого шага`,
+  serverSending: "Отправка в AstrBot…",
+  serverQueued: "AstrBot получил сообщение; ожидается обработка",
+  serverRejected: "Сервер не принял это сообщение",
   queuedPaused: 'На паузе; будет доставлено после продолжения',
   sendNow: 'Отправить сейчас',
   sendNowHint: (bot: string) => `Прервать то, что делает ${bot}, и доставить сейчас`,
@@ -52,7 +55,7 @@ export const S: Partial<typeof en> = {
       default: return `Сильный удар о землю, ${b} ненадолго в отключке`;
     }
   },
-  figure: (kind: string, name: string, b: string): string => (kind === 'figure' ? `Вы заменили ${b} на ${name}` : kind === 'dress' ? `Вы сменили наряд ${b}` : `Не удалось показать ${name}; выбран Coo`),
+  figure: (kind: string, name: string, b: string): string => (kind === 'figure' ? `Вы заменили ${b} на ${name}` : kind === 'dress' ? `Вы сменили наряд ${b}` : `Не удалось показать ${name}; выбран Bot`),
 };
 
 export const STEP: Partial<typeof stepEn> = {

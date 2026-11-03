@@ -116,6 +116,32 @@ describe('tools without a page', () => {
   });
 });
 
+describe('terminal presentation receipts', () => {
+  it('waits for the matching renderer receipt before confirming a speech presentation', async () => {
+    const { world } = await mounted(undefined, { confirmPresentation: true });
+    const page = await FakePage.open(origin(world)); cleanup.push(() => page.close());
+    let done = false;
+    const result = tool(world, 'pet_say').handler({ script: 'Hello from the terminal.' }, ctx).then((r) => { done = true; return r; });
+    const order = await page.next((m) => m.t === 'say');
+    expect(done).toBe(false);
+    page.send({ t: 'presented', id: 'unrelated' });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(done).toBe(false);
+    page.send({ t: 'presented', id: order.id });
+    expect(await result).toMatchObject({ presentationConfirmed: true });
+  });
+
+  it('does not confirm speech when the renderer disconnects', async () => {
+    const { world } = await mounted(undefined, { confirmPresentation: true });
+    const page = await FakePage.open(origin(world)); cleanup.push(() => page.close());
+    const result = tool(world, 'pet_say').handler({ script: 'A line awaiting display.' }, ctx);
+    const rejected = expect(result).rejects.toThrow('presentation_unconfirmed');
+    await page.next((m) => m.t === 'say');
+    await page.close();
+    await rejected;
+  });
+});
+
 describe('computer use', () => {
   it('switching it off ends the engine process, and the engine starts again when needed (two spawns)', async () => {
     const { world, cfg } = await mounted((c) => { c.cua.enabled = true; });
@@ -723,6 +749,20 @@ describe('chat page', () => {
 
     page.send({ t: 'expand', text: '还有这张', images: [png] });
     await expect.poll(() => chat.last('draft')).toEqual({ t: 'draft', text: '还有这张', images: [png] });
+  });
+
+  it('sends original GIF bytes to the body and waits for its presentation receipt', async () => {
+    const { world, host } = await mounted(undefined, { confirmPresentation: true });
+    const page = await FakePage.open(origin(world)); cleanup.push(() => page.close());
+    const gif = Buffer.from('GIF89a-test-image');
+    host.mem.set('mem:blobs/wave.gif', { bytes: gif, mime: 'image/gif' });
+    let done = false;
+    const pending = Promise.resolve(tool(world, 'pet_say').handler({ script: '', images: ['mem:blobs/wave.gif'] }, ctx)).then((out) => { done = true; return out; });
+    const frame = await page.next((m) => m.t === 'say');
+    expect(frame.images).toEqual([{ src: 'data:image/gif;base64,' + gif.toString('base64') }]);
+    expect(done).toBe(false);
+    page.send({ t: 'presented', id: frame.id });
+    expect(await pending).toMatchObject({ presentationConfirmed: true });
   });
 
   it('pet_say images show on the chat page as they were when shown, live and in history', async () => {

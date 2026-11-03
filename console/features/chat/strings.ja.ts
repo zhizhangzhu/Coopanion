@@ -22,6 +22,9 @@ export const S: Partial<typeof en> = {
   contextLast: (when: string) => `前回の整理：${when}`,
   paused: '一時停止中 · メッセージは再開後に届きます',
   queued: (bot: string) => `順番待ち。${bot} はこのステップのあとに読みます`,
+  serverSending: "AstrBot に送信中…",
+  serverQueued: "AstrBot が受信済み・処理待ち",
+  serverRejected: "サーバーがこのメッセージを受け付けませんでした",
   queuedPaused: '一時停止中。再開後に届きます',
   sendNow: '今すぐ送信',
   sendNowHint: (bot: string) => `${bot} の今の作業を止めて、すぐに届けます`,
@@ -46,7 +49,7 @@ export const S: Partial<typeof en> = {
       default: return `${b} は地面に強く落ちて、しばらく目を回していました`;
     }
   },
-  figure: (kind: string, name: string, b: string): string => (kind === 'figure' ? `${b} を「${name}」に変更しました` : kind === 'dress' ? `${b} の着せ替えを変更しました` : `「${name}」を表示できなかったため、Coo に切り替えました`),
+  figure: (kind: string, name: string, b: string): string => (kind === 'figure' ? `${b} を「${name}」に変更しました` : kind === 'dress' ? `${b} の着せ替えを変更しました` : `「${name}」を表示できなかったため、Bot に切り替えました`),
 };
 
 export const STEP: Partial<typeof stepEn> = {

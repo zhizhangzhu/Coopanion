@@ -1,3 +1,12 @@
+<!-- Terminal behavior: app/terminal.cjs and core/astrbot/. -->
+
+This fork includes an AstrBot-connected Windows terminal. See [terminal setup and support boundaries](docs/ASTRBOT_TERMINAL.md).
+
+The AstrBot terminal includes a native shared-history chat window, complex World configuration and Windows-encrypted extension secrets. World cognition runs under the server scheduler and budget.
+The AstrBot edition reuses the original native shell and complete console UI, including habits, dressing, voice, chat, themes and the extension market. AstrBot provides the persona, memory and model decisions.
+Computer use stays off until enabled in Habits. The Bot can open that settings section; mouse and keyboard actions then follow the selected confirmation policy.
+Image-only body bubbles fit the media without reserving an empty caption line.
+Chained desktop actions receive updated capability information before completion is reported.
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/banner-dark.svg">
@@ -269,3 +278,9 @@ Coopanion is assembled from [Cortico](https://github.com/Pal-AI-Lab/Cortico): Co
 [AGPL-3.0-or-later](LICENSE), with an additional permission under section 7 to link the Steamworks API libraries, which the Steam version loads. Releases up to and including 0.1.10 are MIT. The Cortico framework is MIT and ships as a submodule. To open a PR see [CONTRIBUTING.md](CONTRIBUTING.md); your first contribution needs a signed [Contributor License Agreement](CLA.md).
 
 The DeepSeek Whale artwork (the textures under `packages/cortico-world-desktop-pet/web/whale/`) is not covered by the AGPL; its origin and the vendor logos are described in the [desktop pet World's third-party notices](packages/cortico-world-desktop-pet/THIRD_PARTY_NOTICES.md). Third-party components shipped or downloaded at runtime: Electron (MIT), Cortico (MIT), sherpa-onnx (Apache-2.0), FunASR's SenseVoiceSmall model ([FunASR model license](https://github.com/modelscope/FunASR/blob/main/MODEL_LICENSE), downloaded on use), OpenAI's Whisper small model (MIT, downloaded on use), koffi (MIT), jpeg-js (BSD-3-Clause), pnpm (MIT); model service logos come from [lobe-icons](https://github.com/lobehub/lobe-icons) (MIT; each logo belongs to its company and only identifies the service).
+
+The AstrBot edition displays the paired Bot name and user address as read-only server values; edit shared identity in AstrBot.
+
+The AstrBot terminal synchronizes the paired QQ Bot avatar, shows server receipt status separately from local waiting, and displays image and GIF replies in both the chat page and the body bubble. Shared identity and avatar remain server-managed. Unsupported action markers do not create bubbles; actions inside paired titles and quotes keep the phrase together.
+
+Version 0.3.3 shows original message dates and times. Windows display-off, closed-lid, lock and suspend states relinquish proactive priority to QQ; explicit do-not-disturb still applies to both terminals. Application heartbeats keep reachability current without model calls.

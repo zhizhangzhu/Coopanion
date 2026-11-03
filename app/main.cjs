@@ -66,7 +66,9 @@ const WINDOW_ICON = join(ICONS, process.platform === 'win32' ? 'icon.ico' : 'ico
  * The AppUserModelID, by which Windows groups taskbar buttons and picks their icon: electron-builder.yml's appId for
  * a packaged build, an id of its own for a run from source, which would otherwise lend the installed app electron.exe's icon.
  */
-const APP_ID = app.isPackaged ? 'ai.pal.coopanion' : 'ai.pal.coopanion.dev';
+const ASTRBOT = process.env.COOPANION_ASTRBOT_TERMINAL === '1' || process.argv.includes('--astrbot-terminal');
+if (ASTRBOT) { process.env.COOPANION_ASTRBOT_TERMINAL = '1'; process.env.CORTICO_COMPANION_DATA ??= join(app.getPath('appData'), 'AstrBotCoopanion'); }
+const APP_ID = ASTRBOT ? 'io.github.zhizhangzhu.astrbot-coopanion' : app.isPackaged ? 'ai.pal.coopanion' : 'ai.pal.coopanion.dev';
 /** The build's channel and, for `steam`, its Steam app id (see the module header). */
 const BUILD = JSON.parse(readTextFile(join(APP_ROOT, 'package.json'))).coopanion ?? {};
 const STEAM = BUILD.channel === 'steam';
@@ -229,7 +231,7 @@ const { CoreHost } = require('./core-host.cjs');
 const { configuredLanguage, systemLanguage, textOf } = require('./i18n/index.cjs');
 const { RELEASES_URL, canUpdate, startUpdater } = require('./updater.cjs');
 /** Steam updates its build, and the portable one is updated by hand: only the others run the updater. */
-const SELF_UPDATE = !STEAM && !PORTABLE && canUpdate();
+const SELF_UPDATE = !ASTRBOT && !STEAM && !PORTABLE && canUpdate();
 
 const userData = app.getPath('userData');
 const shimDir = join(__dirname, 'shims');
@@ -265,6 +267,7 @@ const core = new CoreHost({
   env: {
     ...process.env,
     CORTICO_HOME: join(userData, 'home'),
+    ...(ASTRBOT ? { ASTRBOT_TERMINAL_DATA: join(userData, 'terminal') } : {}),
     CORTICO_EXTENSIONS_DIR: join(userData, 'extensions'),
     CORTICO_SUPERVISED: '1',
     CORTICO_START_PAUSED: '0',
@@ -359,6 +362,7 @@ async function serveWindow(request) {
     if (url.pathname.startsWith(WINDOW_PREFIX)) return windowFile(url);
     if (from !== coreOrigin()) return refused();
     // a shutdown the console asked for is not a crash
+    if (ASTRBOT && request.method === 'POST' && url.pathname === '/api/avatar') return refused();
     if (request.method === 'POST' && url.pathname === '/api/run/shutdown') {
       core.expectStop();
       const response = await forward(request, url, from);
@@ -535,7 +539,7 @@ async function showPet() {
 /** Brings the pet back unless its page is on screen already (reopening it would make it blink). */
 async function ensurePet() {
   const state = await panel('world:desktop-pet', 'pet', 'state').catch(() => null);
-  if (!state?.connected) await showPet();
+  if (!state?.connected || state?.onDesktop === false) await showPet();
 }
 
 /**
@@ -687,6 +691,7 @@ function askRestoreStranded() {
 // only the settings window's preload sends this, from its main frame
 ipcMain.on('settings:theme', (_e, theme) => applySettingsTheme(settings, theme));
 
+ipcMain.on('settings:terminal', (e) => { e.returnValue = ASTRBOT; });
 ipcMain.on('settings:language', (e) => { e.returnValue = language; });
 ipcMain.on('settings:update', (e) => { e.returnValue = { auto: SELF_UPDATE, step: updateLine() }; });
 
@@ -695,7 +700,8 @@ app.whenReady().then(() => {
   settingsSession.protocol.handle('http', serveWindow);
   keepRemoteOut(settingsSession);
   app.setAppUserModelId(APP_ID);
-  const system = systemLanguage(app);
+  const preferred = process.env.COOPANION_SYSTEM_LANGUAGE;
+  const system = ASTRBOT && require('./i18n/index.cjs').LANGUAGES.includes(preferred) ? preferred : systemLanguage(app);
   core.opts.env.COOPANION_SYSTEM_LANGUAGE = system;
   language = configuredLanguage(join(userData, 'home')) ?? system;
   if (askStranded && askRestoreStranded()) return;
@@ -705,3 +711,5 @@ app.whenReady().then(() => {
   noteAutostart();
   void core.start();
 });
+
+if (ASTRBOT && !PET_HOST) require('./terminal-pairing.cjs').install({ app, ipcMain, core, userData, window: () => settings, open: openSettings });

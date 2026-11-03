@@ -134,7 +134,7 @@ export default {
   // the dressing page: uninstalling figure packs
   'remove.label': 'Desinstalar {name}',
   'remove.title': '¿Desinstalar {name}?',
-  'remove.lead': 'Se eliminan los archivos del paquete; vuelve a importarlo para usarlo. Si la mascota lo lleva puesto, vuelve a ser Coo.',
+  'remove.lead': 'Se eliminan los archivos del paquete; vuelve a importarlo para usarlo. Si la mascota lo lleva puesto, vuelve a ser Bot.',
   'remove.go': 'Desinstalar',
   'remove.failed': 'No se pudo desinstalar',
   'remove.done': 'Desinstalado: {name}',

@@ -1,6 +1,6 @@
 /** The bot's avatar at the rail's foot: GET `/api/avatar` shows it, a click picks an image, crops it to a square and POSTs it as PNG. */
 import type { WebUi } from 'cortico/web/shared/client-panel.ts';
-import { postBlob } from '../base/api.ts';
+import { get, postBlob } from '../base/api.ts';
 import { icon } from '../base/ui/icons.ts';
 import { S } from './strings.ts';
 
@@ -23,7 +23,8 @@ export function createAvatarControl(opts: {
   const button = ui.h('button', 'rail-avatar');
   button.type = 'button';
   button.setAttribute('aria-label', S.changeAvatar);
-  button.title = S.uploadAvatar;
+  button.title = window.astrbotTerminal ? 'QQ / AstrBot' : S.uploadAvatar;
+  if (window.astrbotTerminal) button.disabled = true;
 
   const image = ui.h('img', 'rail-avatar-image');
   image.alt = '';
@@ -39,6 +40,20 @@ export function createAvatarControl(opts: {
   };
   image.addEventListener('load', () => showImage(true), { signal });
   image.addEventListener('error', () => showImage(false), { signal });
+
+  if (window.astrbotTerminal) {
+    let revision = '';
+    const refresh = async (): Promise<void> => {
+      if (doc.hidden) return;
+      try {
+        const status = await get<{ astrbot?: { identity?: { avatar_revision?: string } } }>('/api/status', { signal });
+        const next = status.astrbot?.identity?.avatar_revision;
+        if (next && next !== revision) { revision = next; image.src = '/api/avatar?v='+next; }
+      } catch { /* Keep the last QQ avatar while offline. */ }
+    };
+    const timer = setInterval(() => { void refresh(); }, 30000);
+    signal.addEventListener('abort', () => clearInterval(timer), { once: true }); void refresh();
+  }
 
   const picker = ui.h('input');
   picker.type = 'file';

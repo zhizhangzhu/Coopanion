@@ -31,6 +31,9 @@ const zh = {
   contextLast: (when: string) => `上次整理：${when}`,
   paused: '已暂停 · 消息在继续后送达',
   queued: (bot: string) => `排队中，${bot} 完成当前步骤后查看`,
+  serverSending: "正在发送到 AstrBot…",
+  serverQueued: "AstrBot 已接收，等待处理",
+  serverRejected: "服务器未接受这条消息",
   queuedPaused: '已暂停，继续后送达',
   sendNow: '立即发送',
   sendNowHint: (bot: string) => `中断 ${bot} 当前的操作，立即送达`,
@@ -56,7 +59,7 @@ const zh = {
     }
   },
   /** A figure switch (`figure`), a dress switch (`dress`), or a figure that did not load. */
-  figure: (kind: string, name: string, b: string): string => (kind === 'figure' ? `你将 ${b} 更换为「${name}」` : kind === 'dress' ? `你为 ${b} 更换了装扮` : `「${name}」显示失败，已切换为 Coo`),
+  figure: (kind: string, name: string, b: string): string => (kind === 'figure' ? `你将 ${b} 更换为「${name}」` : kind === 'dress' ? `你为 ${b} 更换了装扮` : `「${name}」显示失败，已切换为 Bot`),
 };
 
 export const en: typeof zh = {
@@ -80,6 +83,9 @@ export const en: typeof zh = {
   contextLast: (when: string) => `Last tidied up: ${when}`,
   paused: 'Paused · messages arrive once resumed',
   queued: (bot: string) => `Queued; ${bot} reads it after this step`,
+  serverSending: "Sending to AstrBot…",
+  serverQueued: "Received by AstrBot; awaiting processing",
+  serverRejected: "The server did not accept this message",
   queuedPaused: 'Paused; delivered once resumed',
   sendNow: 'Send now',
   sendNowHint: (bot: string) => `Stop what ${bot} is doing and deliver it now`,
@@ -104,7 +110,7 @@ export const en: typeof zh = {
       default: return `${b} hit the ground hard and was knocked out for a bit`;
     }
   },
-  figure: (kind: string, name: string, b: string): string => (kind === 'figure' ? `You changed ${b} to ${name}` : kind === 'dress' ? `You changed ${b}'s outfit` : `${name} failed to show; switched to Coo`),
+  figure: (kind: string, name: string, b: string): string => (kind === 'figure' ? `You changed ${b} to ${name}` : kind === 'dress' ? `You changed ${b}'s outfit` : `${name} failed to show; switched to Bot`),
 };
 
 export const S = pick({

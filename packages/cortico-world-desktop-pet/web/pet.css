@@ -423,3 +423,7 @@ body.desk .floor{display:none}
 @media (prefers-reduced-motion: reduce){.wall-glow, .wall-lens, .bubble.said{transition:none}}
 @media (prefers-reduced-motion: reduce){.bubble.status.pop, .status .status-icon svg, .status .status-icon svg *, .bubble.pop, .b-opt, .b-own, .d-body > *, .d-card, .d-key, .d-key.taps, .d-bar.wait i, .d-card.on .d-cardic, .d-field.shake, .d-pill.chosen, .caret, .menu, .tools, .tool.holding::after, .tool.sent, .m-tile, .m-tile::before, .m-tile::after, .m-tile .ic, .m-tile .ic::before{animation:none}}
 @media (prefers-reduced-motion: reduce){.d-cards .d-card.on .d-cardic[class*="ic-persona_"], .d-cards .d-card.on .d-cardic .spout{animation:none}}
+
+/* Original image bytes stay in img elements, preserving GIF playback. */
+.b-media{display:flex;flex-wrap:wrap;gap:6px;max-width:260px;max-height:260px;overflow:auto}
+.b-media img{display:block;width:auto;height:auto;max-width:100%;max-height:200px;object-fit:contain;border-radius:9px}

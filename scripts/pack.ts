@@ -34,6 +34,10 @@ const run = (cmd: string, args: string[], cwd: string) => {
 };
 
 const ARCH = process.env.PACK_ARCH || process.arch;
+const TERMINAL = process.env.COOPANION_TERMINAL === '1';
+if (TERMINAL && process.platform !== 'win32') throw new Error('Build the AstrBot terminal on Windows; native dependencies must match the target.');
+const terminalCommit = TERMINAL ? spawnSync('git', ['rev-parse', 'HEAD'], { cwd: ROOT, encoding: 'utf8' }).stdout?.trim() : '';
+if (TERMINAL && !/^[a-f0-9]{40}$/.test(terminalCommit ?? '')) throw new Error('The terminal build requires a Git commit for its release metadata.');
 const STEAM = process.env.COOPANION_CHANNEL === 'steam';
 const STEAM_APP_ID = Number(process.env.STEAM_APP_ID);
 if (STEAM && !(Number.isInteger(STEAM_APP_ID) && STEAM_APP_ID > 0)) {
@@ -120,8 +124,9 @@ cpSync(join(ROOT, 'build', 'console'), join(OUT, 'build', 'console'), { recursiv
 cpSync(join(ROOT, 'build', 'panels'), join(OUT, 'build', 'panels'), { recursive: true, filter: (src) => !src.endsWith('.map') });
 writeFileSync(join(OUT, 'package.json'), JSON.stringify({
   name: rootPkg.name, productName: rootPkg.productName, version: rootPkg.version, description: rootPkg.description,
-  license: rootPkg.license, author: rootPkg.author, homepage: rootPkg.homepage, type: 'module', main: 'app/main.cjs',
+  license: rootPkg.license, author: rootPkg.author, homepage: rootPkg.homepage, type: 'module', main: TERMINAL ? 'app/terminal.cjs' : 'app/main.cjs',
   dependencies: DEPS,
+  ...(TERMINAL ? { astrbotTerminal: { protocol: 1, clientCommit: terminalCommit } } : {}),
   coopanion: STEAM ? { channel: 'steam', steamAppId: STEAM_APP_ID } : { channel: PORTABLE ? 'portable' : 'github' },
 }, null, 2));
 run('npm', ['install', '--omit=dev', '--no-package-lock', '--no-audit', '--no-fund', '--loglevel=error', `--os=${process.platform}`, `--cpu=${ARCH}`], OUT);
@@ -143,7 +148,7 @@ if (process.platform === 'win32') await addMinGit(join(OUT, 'mingit'));
 console.log(`app directory ready: ${relative(ROOT, OUT)}`);
 
 const target = process.platform === 'darwin' ? '--mac' : process.platform === 'linux' ? '--linux' : '--win';
-run(join(ROOT, 'node_modules', '.bin', process.platform === 'win32' ? 'electron-builder.cmd' : 'electron-builder'), [target, ...PORTABLE ? ['zip'] : [], `--${ARCH}`, ...STEAM ? ['--dir'] : [], '--publish', 'never', ...process.argv.slice(2)], ROOT);
+run(join(ROOT, 'node_modules', '.bin', process.platform === 'win32' ? 'electron-builder.cmd' : 'electron-builder'), [target, ...PORTABLE ? ['zip'] : [], `--${ARCH}`, ...STEAM ? ['--dir'] : [], '--publish', 'never', ...TERMINAL ? ['--config', 'electron-builder.terminal.yml'] : [], ...process.argv.slice(2)], ROOT);
 
 if (STEAM) {
   // electron-builder takes node_modules from the pnpm workspace's dependency graph, which has no steamworks.js and

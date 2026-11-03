@@ -23,6 +23,8 @@ import { intro } from '../intro.ts';
 import { requestMode } from '../mode.ts';
 import { contextGauge, contextRing, type ContextGauge, type ContextStatus } from './context.ts';
 import { S, STEP } from './strings.ts';
+import { chatTime } from './time.ts';
+import { S as INPUT_TEXT } from '../../base/ui/strings.ts';
 
 const PET_PAGE = 'world:desktop-pet';
 /** The switch for the context ring, a key of the `companion` config group. */
@@ -83,6 +85,9 @@ async function mount(ctx: PageContext): Promise<void> {
   const items = new Map<number, ChatItem>();
   /** The person's messages the bot has not taken in yet. */
   const pending = new Map<number, UserItem>();
+  const accepted = new Set<number>();
+  let avatarRevision = "";
+  let timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   /** Messages that never reached the bot. */
   const discarded = new Set<number>();
   /** Withdrawn messages and where waiting messages were delivered, from the history loaded so far; applied to earlier pages. */
@@ -125,9 +130,10 @@ async function mount(ctx: PageContext): Promise<void> {
     label: S.title,
     draftKey: 'cortico.console.draft.chat',
     placeholder: S.connecting,
-    images: { max: 8 },
+    images: { max: 8, ...(window.astrbotTerminal ? { maxBytes: 1024 * 1024 } : {}) },
     tools: ring.el,
     onSubmit: (text, images) => {
+      if (window.astrbotTerminal && images.reduce((sum, image) => sum + image.bytes, 0) > 1024 * 1024) { ui.toast(INPUT_TEXT.stillTooLarge(INPUT_TEXT.imageFallback, 1)); return false; }
       const id = nextSend++;
       sentById.set(id, { text, images });
       stream.send(JSON.stringify({ t: 'send', id, text, images: images.map((i) => ({ mime: i.mime, base64: i.base64, name: i.name })) }));
@@ -173,9 +179,12 @@ async function mount(ctx: PageContext): Promise<void> {
   const avatar = (): HTMLElement => {
     const a = ui.h('span', 'chat-avatar');
     const img = doc.createElement('img');
-    img.src = AVATAR_URL;
+    img.src = AVATAR_URL + (avatarRevision ? "?v="+avatarRevision : "");
     img.alt = '';
-    a.append(img);
+    const fallback = ui.h('span', null, bot.slice(0, 1)); fallback.hidden = true;
+    img.addEventListener('error', () => { img.hidden = true; fallback.hidden = false; a.title = bot; });
+    img.addEventListener('load', () => { img.hidden = false; fallback.hidden = true; });
+    a.append(img, fallback);
     return a;
   };
 
@@ -194,12 +203,21 @@ async function mount(ctx: PageContext): Promise<void> {
     return pic;
   };
 
+  const appendTime = (parent: HTMLElement, ts: string): void => {
+    const value = chatTime(ts, LANGUAGE, timeZone);
+    if (!value) return;
+    const time = doc.createElement('time'); time.className = 'chat-time';
+    time.dateTime = value.iso; time.title = value.full; time.textContent = value.label;
+    parent.append(time);
+  };
+
   const userNode = (it: UserItem): HTMLElement => {
     const el = ui.h('div', 'msg-user');
+    appendTime(el, it.ts);
     for (const img of it.images ?? []) el.append(thumb(img));
     if (it.text) el.append(ui.h('div', 'bubble', it.text));
     if (it.via === 'voice') el.append(ui.h('span', 'via', S.voice));
-    if (discarded.has(it.cursor)) el.append(ui.h('span', 'via bad', S.discarded));
+    if (discarded.has(it.cursor)) el.append(ui.h('span', 'via bad', (window.astrbotTerminal ? S.serverRejected : S.discarded)));
     return el;
   };
 
@@ -286,10 +304,15 @@ async function mount(ctx: PageContext): Promise<void> {
     };
     for (const it of shown) {
       if (it.kind === 'user') { group = null; thread.append(userNode(it)); continue; }
-      if (it.kind === 'touch') { group = null; thread.append(ui.h('div', 'chat-note', it.touch ? S.touch(it.touch, bot) : it.text ?? '')); continue; }
-      if (it.kind === 'figure') { group = null; thread.append(ui.h('div', 'chat-note', S.figure(it.figure.kind, localName(it.figure.name), bot))); continue; }
+      if (it.kind === 'touch' || it.kind === 'figure') {
+        group = null;
+        const note = ui.h('div', 'chat-note'); appendTime(note, it.ts);
+        note.append(doc.createTextNode(it.kind === 'touch' ? (it.touch ? S.touch(it.touch, bot) : it.text ?? '') : S.figure(it.figure.kind, localName(it.figure.name), bot)));
+        thread.append(note); continue;
+      }
       if (it.kind === 'say') {
         const body = cooBody();
+        appendTime(body, it.ts);
         for (const beat of it.beats) {
           const row = ui.h('div', 'sayrow');
           const said = ui.h('div', 'pet-bubble say');
@@ -299,7 +322,7 @@ async function mount(ctx: PageContext): Promise<void> {
           body.append(row);
         }
         for (const img of it.images ?? []) body.append(thumb(img));
-      } else if (it.kind === 'ask') cooBody().append(askNode(it, it.askId === openAsk));
+      } else if (it.kind === 'ask') { const body = cooBody(); appendTime(body, it.ts); body.append(askNode(it, it.askId === openAsk)); }
       else if (it.kind === 'activity' && shownSteps(it.steps).length) cooBody().append(activityNode(String(it.cursor), shownSteps(it.steps), S.seconds(Math.max(1, Math.round(it.ms / 1000))), false));
     }
     const liveSteps = live ? shownSteps(live.steps) : [];
@@ -325,13 +348,13 @@ async function mount(ctx: PageContext): Promise<void> {
     queueBox.replaceChildren();
     if (pending.size === 0) return;
     const head = ui.h('div', 'qhead');
-    head.append(ui.h('span', 'spinner'), ui.h('span', null, paused ? S.queuedPaused : S.queued(bot)));
+    head.append(ui.h('span', 'spinner'), ui.h('span', null, paused ? S.queuedPaused : window.astrbotTerminal ? ([...pending.keys()].every((key) => accepted.has(key)) ? S.serverQueued : S.serverSending) : S.queued(bot)));
     queueBox.append(head);
     for (const it of pending.values()) {
       const row = ui.h('div', 'qitem');
       const n = it.images?.length ?? 0;
       row.append(ui.h('span', 'qtext', [it.text, n ? S.imageCount(n) : ''].filter(Boolean).join(' ')));
-      if (it.via !== 'voice') {
+      if (it.via !== 'voice' && !accepted.has(it.cursor)) {
         const now = ui.h('button', 'pill primary', S.sendNow);
         now.type = 'button';
         now.title = S.sendNowHint(bot);
@@ -360,6 +383,22 @@ async function mount(ctx: PageContext): Promise<void> {
     for (const [k, v] of sorted) items.set(k, v);
   };
 
+  if (window.astrbotTerminal) {
+    const refreshAvatar = async (): Promise<void> => {
+      if (doc.hidden) return;
+      try {
+        const status = await get<{ astrbot?: { identity?: { avatar_revision?: string; timezone?: string } } }>('/api/status', { signal: ctx.signal });
+        const zone = status.astrbot?.identity?.timezone;
+        if (zone && zone !== timeZone) { timeZone = zone; render(); }
+        const revision = status.astrbot?.identity?.avatar_revision;
+        if (revision && revision !== avatarRevision) { avatarRevision = revision; for (const img of thread.querySelectorAll<HTMLImageElement>('.chat-avatar img')) img.src = AVATAR_URL+'?v='+revision; }
+      } catch { /* Keep the last image while disconnected. */ }
+    };
+    const timer = setInterval(() => { void refreshAvatar(); }, 30000);
+    ctx.signal.addEventListener('abort', () => clearInterval(timer), { once: true });
+    void refreshAvatar();
+  }
+
   // ---- stream
   const stream = ctx.lifecycle.own(openStream({
     url: env.wsUrl(panelStreamRoute(PET_PAGE, 'chat')),
@@ -375,7 +414,8 @@ async function mount(ctx: PageContext): Promise<void> {
         try { f = JSON.parse(raw) as Record<string, unknown>; } catch { return; }
         switch (f.t) {
           case 'init': {
-            items.clear(); pending.clear();
+            items.clear(); pending.clear(); accepted.clear();
+            for (const cursor of (Array.isArray(f.accepted) ? f.accepted : []) as number[]) accepted.add(cursor);
             bot = typeof f.bot === 'string' && f.bot ? f.bot : bot;
             paused = f.paused === true;
             phase = (f.phase as RunPhase | null) ?? null;
@@ -408,6 +448,7 @@ async function mount(ctx: PageContext): Promise<void> {
             return;
           }
           case 'item': addItem(f.item as ChatItem, f.pending === true); sortItems(); refresh(); return;
+          case 'transport': { if (f.status === 'accepted' && typeof f.cursor === 'number') accepted.add(f.cursor); renderQueue(); return; }
           case 'sent': {
             const mine = sentById.get(f.id as number);
             sentById.delete(f.id as number);
@@ -425,7 +466,7 @@ async function mount(ctx: PageContext): Promise<void> {
             for (const c of (f.cursors as number[]) ?? []) {
               const it = items.get(c);
               if (typeof f.at === 'number') { deliveredRefs.set(c, f.at); if (it?.kind === 'user') it.at = f.at; }
-              pending.delete(c);
+              pending.delete(c); accepted.delete(c);
               sentByCursor.delete(c);
               if (f.outcome === 'discarded') discarded.add(c);
             }

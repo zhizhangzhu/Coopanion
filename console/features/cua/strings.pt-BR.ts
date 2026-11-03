@@ -2,9 +2,9 @@ import type { en } from './strings.ts';
 
 export const S: Partial<typeof en> = {
   title: 'Uso do computador',
-  enabled: 'Deixar Coo usar este computador',
+  enabled: 'Deixar Bot usar este computador',
   control: 'Permitir o mouse e o teclado',
-  controlHint: 'Desligado, Coo só pode olhar a tela.',
+  controlHint: 'Desligado, Bot só pode olhar a tela.',
   permission: 'Quando perguntar a você',
   levels: { 'ask-each-turn': 'Todo turno', 'ask-before-acting': 'Antes de agir', 'ask-once': 'Uma vez', 'never-ask': 'Nunca' },
   levelHints: {
@@ -20,11 +20,11 @@ export const S: Partial<typeof en> = {
   saveFailed: (why: string) => `Não foi salvo: ${why}`,
   enabledLabel: 'Usar o computador',
   controlLabel: 'Mouse e teclado',
-  riskTitle: 'Deixar o Coo usar este computador?',
-  riskLead: 'Ao ativar, o Coo vai observar sua tela e usar seu mouse e teclado. ',
+  riskTitle: 'Deixar o Bot usar este computador?',
+  riskLead: 'Ao ativar, o Bot vai observar sua tela e usar seu mouse e teclado. ',
   riskDanger: 'Isso pode ser muito perigoso',
   riskAfter: '; confirme que você entende o seguinte:',
-  risks: ['As capturas de tela (que podem mostrar conteúdo privado, como conversas) são enviadas ao serviço de modelo que você usa', 'O Coo pode clicar no lugar errado, digitar errado ou acabar na janela errada. Garanta sempre que você consegue acompanhar e interromper o Coo a qualquer momento.', 'Não entregue ao Coo pagamentos, senhas nem nada que envolva informações sensíveis, ações no mundo real ou que não possa ser desfeito.'],
-  riskNote: 'O Coo para sozinho quando você usa o mouse ou o teclado. Você pode desativar esta função a qualquer momento.',
+  risks: ['As capturas de tela (que podem mostrar conteúdo privado, como conversas) são enviadas ao serviço de modelo que você usa', 'O Bot pode clicar no lugar errado, digitar errado ou acabar na janela errada. Garanta sempre que você consegue acompanhar e interromper o Bot a qualquer momento.', 'Não entregue ao Bot pagamentos, senhas nem nada que envolva informações sensíveis, ações no mundo real ou que não possa ser desfeito.'],
+  riskNote: 'O Bot para sozinho quando você usa o mouse ou o teclado. Você pode desativar esta função a qualquer momento.',
   riskOk: 'Ativar',
 };

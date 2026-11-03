@@ -50,7 +50,7 @@ export default {
   'action.soundOn': 'Sounds: on · click to turn off',
   'action.soundOff': 'Sounds: off · click to turn on',
   'action.dress': 'Dress up',
-  'action.hide': 'Hide the pet (show Coo again from the tray icon)',
+  'action.hide': 'Hide the pet (show Bot again from the tray icon)',
   'menu.cancel': 'Cancel',
   'menu.resume': 'Resume',
   'menu.pause': 'Pause',
@@ -141,7 +141,7 @@ export default {
   // the dressing page: uninstalling figure packs
   'remove.label': 'Uninstall {name}',
   'remove.title': 'Uninstall {name}?',
-  'remove.lead': "The pack's files are deleted; import it again to use it. A pet wearing this pack changes back to Coo.",
+  'remove.lead': "The pack's files are deleted; import it again to use it. A pet wearing this pack changes back to Bot.",
   'remove.go': 'Uninstall',
   'remove.failed': 'Could not uninstall',
   'remove.done': 'Uninstalled: {name}',

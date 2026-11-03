@@ -29,3 +29,9 @@ if (ipcRenderer.sendSync('settings:update').auto) {
     },
   });
 }
+
+if (ipcRenderer.sendSync('settings:terminal')) {
+  contextBridge.exposeInMainWorld('astrbotTerminal', {
+    importPairing: () => ipcRenderer.invoke('terminal:import'),
+  });
+}
