@@ -6,7 +6,7 @@ Version 0.3.2 refreshes the verified QQ Bot avatar through AstrBot and displays 
 
 Computer use is off by default. The terminal exposes `pet_cua_open_settings` so the Bot can open the original Habits switch after the person asks. Enabling it advertises the computer-use tools; native confirmation, refusal, per-turn reset and terminal-specific confirmation remain in the World. Version 0.3.4 restores this settings callback.
 
-Version 0.3.5 removes the unused text row from image-only body bubbles. Captioned images retain their text area.
+Version 0.3.5 removes the unused text row from image-only body bubbles. Captioned images retain their text area. Changed capabilities are published before completed tool receipts; overlapping refreshes are awaited so immediate chained calls use the current revision.
 
 ## Run and pair
 

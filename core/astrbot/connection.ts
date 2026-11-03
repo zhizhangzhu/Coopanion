@@ -28,6 +28,7 @@ export class TerminalConnection {
   private advertised = '';
   private lastState = '';
   private refreshPending: WebSocket | null = null;
+  private refreshWork: Promise<void> | null = null;
   private catalogAt = 0;
   private catalogDirty = true;
   private lastError = '';
@@ -126,9 +127,16 @@ export class TerminalConnection {
   }
   async refresh(forceCatalog = false): Promise<void> {
     if (forceCatalog) this.catalogDirty = true;
-    if (!this.welcomed || !this.socket || this.refreshPending === this.socket) return;
+    if (!this.welcomed || !this.socket) return;
+    if (this.refreshPending === this.socket) {
+      await this.refreshWork;
+      if (forceCatalog) await this.refresh();
+      return;
+    }
     const socket = this.socket;
     this.refreshPending = socket;
+    let finish: () => void = () => {};
+    this.refreshWork = new Promise<void>((resolve) => { finish = resolve; });
     try {
     const state = this.delegate.state();
     const stateJson = JSON.stringify(state);
@@ -147,7 +155,10 @@ export class TerminalConnection {
       this.revision = randomUUID();
       this.send(frame('catalog', this.revision, catalog));
     }
-    } finally { if (this.refreshPending === socket) this.refreshPending = null; }
+    } finally {
+      if (this.refreshPending === socket) { this.refreshPending = null; this.refreshWork = null; }
+      finish();
+    }
   }
   private async receive(message: Frame, socket: WebSocket): Promise<void> {
     if (this.socket !== socket) return;
@@ -215,8 +226,9 @@ export class TerminalConnection {
       this.journal.calls[message.id] = result as Journal['calls'][string];
       this.save();
       this.controllers.delete(message.id);
+      try { await this.refresh(true); }
+      catch { this.catalogDirty = true; this.delegate.error?.('catalog_refresh_failed'); }
       this.send(frame('result', message.id, result));
-      void this.refresh(true);
     }
   }
 }
