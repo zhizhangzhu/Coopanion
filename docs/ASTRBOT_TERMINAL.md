@@ -4,6 +4,8 @@ The Windows AstrBot edition uses the original Coopanion native shell and complet
 
 Version 0.3.2 refreshes the verified QQ Bot avatar through AstrBot and displays it read-only. Transport acceptance is distinct from model admission. Image and GIF replies appear in the chat and body bubble; body presentation requires the renderer's receipt. Unsupported action markers do not split speech, and actions inside paired titles, quotes and parentheses run inline.
 
+Computer use is off by default. The terminal exposes `pet_cua_open_settings` so the Bot can open the original Habits switch after the person asks. Enabling it advertises the computer-use tools; native confirmation, refusal, per-turn reset and terminal-specific confirmation remain in the World. Version 0.3.4 restores this settings callback.
+
 ## Run and pair
 
 Use Node 24.11 and pnpm 11.28.6. After `pnpm install --frozen-lockfile` and `pnpm run build:cortico`, set `CORTICO_COMPANION_DATA` to a separate empty directory and run `pnpm run dev:terminal`. Never use another installed app's data for development.

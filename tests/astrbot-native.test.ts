@@ -8,9 +8,12 @@ const panelRoute = (page: string, panel: string, method: string) => `/api/webui/
 const panelStreamRoute = (page: string, panel: string) => `/ws/providers/${encodeURIComponent(page)}/panels/${panel}`;
 it('serves original configuration, panels and chat while bypassing every local model decision', async () => {
   const root = mkdtempSync(join(tmpdir(), 'astrbot-native-'));
+  const oldDisplay = process.env.DISPLAY;
+  if (process.platform === 'linux' && !oldDisplay) process.env.DISPLAY = ':99';
   const oldExtensions = process.env.CORTICO_EXTENSIONS_DIR;
   process.env.CORTICO_EXTENSIONS_DIR = join(root, 'extensions');
-  const runtime = await createNativeTerminal({ root, language: 'zh', window: false });
+  const opened: string[] = [];
+  const runtime = await createNativeTerminal({ root, language: 'zh', window: false, onOpen: (route) => opened.push(route) });
   const base = `http://127.0.0.1:${runtime.port}`;
   let socket: WebSocket | undefined;
   try {
@@ -27,6 +30,13 @@ it('serves original configuration, panels and chat while bypassing every local m
       const locked = await fetch(base+'/api/config', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({group,values:{[key!]: 'Local override'}}) });
       expect(locked.ok).toBe(false); expect(await locked.text()).toContain(key === 'timezone' ? 'timezone' : 'astrbot_managed_setting');
     }
+    const available = (await runtime.bridge.catalog()).worlds as Array<{ id: string; tools: Array<{ name: string }> }>;
+    const desktop = available.find((world) => world.id === 'desktop-pet')!;
+    expect(desktop.tools.some((tool) => tool.name === 'pet_cua_open_settings')).toBe(true);
+    expect(desktop.tools.some((tool) => tool.name === 'pet_cua_key')).toBe(false);
+    const settingsResult = await runtime.bridge.call('desktop-pet', 'pet_cua_open_settings', {}, new AbortController().signal);
+    expect(settingsResult.status).toBe('completed');
+    expect(opened).toContain('#/pet?cua=enable');
     const received: Record<string, unknown>[] = []; runtime.bridge.onEvent = (event) => { received.push(event); };
     const model = vi.spyOn(runtime.bot.core.llm, 'respond');
     socket = new WebSocket(base.replace('http','ws')+panelStreamRoute('world:desktop-pet','chat')+'?language=zh', { headers: { Origin: base } });
@@ -43,7 +53,7 @@ it('serves original configuration, panels and chat while bypassing every local m
     await expect.poll(() => frames.some((f) => f.t === 'settled')).toBe(true);
     expect(runtime.bot.core.bus.pendingImmediate()).toBe(0); expect(model).not.toHaveBeenCalled();
     expect((await runtime.bridge.catalog()).worlds).toEqual(expect.arrayContaining([expect.objectContaining({ id: 'desktop-pet', supported: true })]));
-  } finally { socket?.close(); await runtime.stop(); if (oldExtensions === undefined) delete process.env.CORTICO_EXTENSIONS_DIR; else process.env.CORTICO_EXTENSIONS_DIR = oldExtensions; rmSync(root, { recursive: true, force: true }); }
+  } finally { socket?.close(); await runtime.stop(); if (oldDisplay === undefined) delete process.env.DISPLAY; else process.env.DISPLAY = oldDisplay; if (oldExtensions === undefined) delete process.env.CORTICO_EXTENSIONS_DIR; else process.env.CORTICO_EXTENSIONS_DIR = oldExtensions; rmSync(root, { recursive: true, force: true }); }
 }, 30000);
 it('restores paused chat input and its pending indicator across a full native runtime restart', async () => {
   const root = mkdtempSync(join(tmpdir(), 'astrbot-native-recovery-'));

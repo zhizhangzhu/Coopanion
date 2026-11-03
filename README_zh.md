@@ -4,6 +4,7 @@
 
 AstrBot 终端提供独立聊天窗口、共享历史分页、复杂 World 配置和 Windows 加密扩展密钥；扩展认知由服务器统一调度并计入预算。
 AstrBot 版本直接复用原生窗口和完整控制台 UI，包括习惯、装扮、语音、聊天、主题和扩展市场；人格、记忆与模型决策统一由 AstrBot 提供。
+电脑操作默认关闭；Bot 可以打开习惯页的对应设置，启用后的鼠标与键盘操作遵循你选择的确认方式。
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/banner-dark.svg">

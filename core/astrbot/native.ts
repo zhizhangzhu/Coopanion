@@ -63,7 +63,7 @@ export async function createNativeTerminal(options: NativeTerminalOptions) {
     const petDefinition = desktopPetDefinition({ confirmPresentation: true, botName: () => String(identity.bot_name ?? 'Bot'), language: () => language, modelLanguage: () => 'en',
       onCreate: (world) => { pet = world; },
       controls: { isPaused: () => state().dnd, setPaused: (paused) => { bot?.core.bus.setPaused(paused); nativeState.dnd = paused; void connection?.refresh(); },
-        openSettings: () => options.onOpen?.('#/pet'), openChat: () => options.onOpen?.('#/chat'), openDress: () => options.onOpen?.('#/dress'),
+        openSettings: () => options.onOpen?.('#/pet'), openCuaSettings: () => options.onOpen?.('#/pet?cua=enable'), openChat: () => options.onOpen?.('#/chat'), openDress: () => options.onOpen?.('#/dress'),
         guide: async () => { options.onOpen?.('#/home'); }, quit: () => options.onQuit?.(), quitLabel: () => coreText(language).quit },
     });
     const cfgDefaults = petDefinition.defaults(); cfgDefaults.enabled = true; cfgDefaults.skin.figure = 'whale'; cfgDefaults.skin.scheme = 'deepseek'; cfgDefaults.asr.enabled = false;
