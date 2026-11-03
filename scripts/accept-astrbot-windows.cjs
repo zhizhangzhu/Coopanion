@@ -11,6 +11,7 @@ const root = fs.mkdtempSync(path.join(os.tmpdir(), 'astrbot-installer-'));
 const install = path.join(root, 'app'), data = path.join(root, 'data');
 const output = path.resolve('dist', 'acceptance'); fs.mkdirSync(output, { recursive: true });
 let server, socket, debuggerSocket, appProcess;
+const receipts = [];
 const children = [];
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const env = { ...process.env, CORTICO_COMPANION_DATA: data, COOPANION_SYSTEM_LANGUAGE: 'en' };
@@ -38,6 +39,7 @@ async function main() {
     peer.send(JSON.stringify(frame('welcome', 'welcome', { device_id: 'windows-ci', persona_id: 'Acceptance', bot_id: 'bot-ci', user_id: 'user-ci' })));
     peer.on('message', (raw) => {
       const message = JSON.parse(String(raw));
+      if (message.type === 'result') receipts.push({ id: message.id, status: message.payload.status, text: String(message.payload.text ?? '').slice(0,600) });
       if (message.type === 'catalog') revision = message.id;
       if (message.type === 'state' || message.type === 'hello') observedState = message.payload;
       if (message.type === 'query') {
@@ -104,4 +106,4 @@ async function main() {
   fs.writeFileSync(path.join(output, 'acceptance.json'), JSON.stringify({ installer: 'passed', original_ui: 'passed', wss_pairing: 'passed', chat_and_receipt: 'passed', body_png_gif_receipt: 'passed', body_image_only_receipt: 'passed', qq_avatar: 'passed', message_times: 'passed', windows_power_observer: 'passed', hide_restore: 'passed', reinstall_preserves_pairing: 'passed' }, null, 2));
   console.log('Windows installer and native UI acceptance passed.');
 }
-main().then(() => { clearTimeout(deadline); socket?.close(); server?.close(); process.exit(0); }).catch((error) => { console.error(error.message); clearTimeout(deadline); debuggerSocket?.close(); socket?.close(); server?.close(); for (const child of children) child.kill(); process.exit(1); });
+main().then(() => { clearTimeout(deadline); socket?.close(); server?.close(); process.exit(0); }).catch((error) => { console.error('::error::'+error.message+' '+JSON.stringify(receipts)); fs.writeFileSync(path.join(output,'failure.json'),JSON.stringify({error:error.message,receipts},null,2)); clearTimeout(deadline); debuggerSocket?.close(); socket?.close(); server?.close(); for (const child of children) child.kill(); process.exit(1); });
