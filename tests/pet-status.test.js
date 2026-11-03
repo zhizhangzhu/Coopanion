@@ -247,3 +247,22 @@ describe("the person's lines above Coo", () => {
     expect(up(p)).toHaveLength(0);
   });
 });
+
+
+describe('image-only speech geometry', () => {
+  it.each(['png', 'gif'])('does not reserve an empty text line above a %s meme', (mime) => {
+    const p = page();
+    p.onOrder({ t: 'say', id: 'image-only', beats: [{ text: '', actions: [] }], images: [{ src: `data:image/${mime};base64,AA==` }] });
+    p.step(.01);
+    expect(p.bubble.hidden).toBe(false);
+    expect(p.bubble.querySelector('.b-media img')).not.toBeNull();
+    expect(p.bubble.querySelector('.b-text')).toBeNull();
+  });
+  it('keeps the text area when a caption accompanies the image', () => {
+    const p = page();
+    p.onOrder({ t: 'say', id: 'caption', beats: [{ text: 'Caption', actions: [] }], images: [{ src: 'data:image/png;base64,AA==' }] });
+    p.step(.01);
+    expect(p.bubble.querySelector('.b-text')).not.toBeNull();
+    expect(p.bubble.querySelector('.b-media img')).not.toBeNull();
+  });
+});

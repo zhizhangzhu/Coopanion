@@ -50,7 +50,9 @@ async function main() {
         peer.send(JSON.stringify(frame('lifecycle', 'delivered', { kind: 'delivered', cursor: message.payload.cursor })));
         if (message.payload.text === 'Windows native acceptance') peer.send(JSON.stringify(frame('call', 'reply', { world: 'desktop-pet', tool: 'pet_say', arguments: { script: 'Windows native reply received.' }, attachments, revision, expires_at: Date.now()/1000+60 })));
       }
-      if (message.type === 'result' && message.id === 'reply') receipt = message.payload;
+      if (message.type === 'result' && message.id === 'reply' && message.payload.status === 'completed')
+        peer.send(JSON.stringify(frame('call', 'image-only-reply', { world: 'desktop-pet', tool: 'pet_say', arguments: { script: '' }, attachments, revision, expires_at: Date.now()/1000+60 })));
+      if (message.type === 'result' && message.id === 'image-only-reply') receipt = message.payload;
     });
   });
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -99,7 +101,7 @@ async function main() {
   const again = run(path.resolve('dist', installer), ['/S', '/D='+install]); const [reinstalled] = await once(again, 'exit');
   if (reinstalled !== 0 || !fs.readFileSync(pairingFile).equals(preserved)) throw Error('Reinstall replaced pairing');
   terminate();
-  fs.writeFileSync(path.join(output, 'acceptance.json'), JSON.stringify({ installer: 'passed', original_ui: 'passed', wss_pairing: 'passed', chat_and_receipt: 'passed', body_png_gif_receipt: 'passed', qq_avatar: 'passed', message_times: 'passed', windows_power_observer: 'passed', hide_restore: 'passed', reinstall_preserves_pairing: 'passed' }, null, 2));
+  fs.writeFileSync(path.join(output, 'acceptance.json'), JSON.stringify({ installer: 'passed', original_ui: 'passed', wss_pairing: 'passed', chat_and_receipt: 'passed', body_png_gif_receipt: 'passed', body_image_only_receipt: 'passed', qq_avatar: 'passed', message_times: 'passed', windows_power_observer: 'passed', hide_restore: 'passed', reinstall_preserves_pairing: 'passed' }, null, 2));
   console.log('Windows installer and native UI acceptance passed.');
 }
 main().then(() => { clearTimeout(deadline); socket?.close(); server?.close(); process.exit(0); }).catch((error) => { console.error(error.message); clearTimeout(deadline); debuggerSocket?.close(); socket?.close(); server?.close(); for (const child of children) child.kill(); process.exit(1); });

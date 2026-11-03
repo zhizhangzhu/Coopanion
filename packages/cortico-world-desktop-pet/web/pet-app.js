@@ -482,7 +482,7 @@ function stepDialog(dt) {
       it.shown = 0; it.acc = 0; it.fired = 0; it.startAt = T + lead;
       const hasImages = it.i === 0 && it.images?.length;
       if (b.text || hasImages) {
-        openBubble('say', '<p class="b-text"></p>');
+        openBubble('say', b.text ? '<p class="b-text"></p>' : '');
         if (hasImages) {
           const media = document.createElement('div'); media.className = 'b-media'; bubble.append(media);
           it.mediaReady = false; let remaining = it.images.length;
