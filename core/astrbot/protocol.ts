@@ -3,7 +3,7 @@ export const VERSION = 1;
 export const MAX_FRAME = 2 * 1024 * 1024;
 export interface Pairing { v: 1; url: string; ca: string; device_id: string; token: string }
 export interface Frame { v: 1; type: string; id: string; payload: Record<string, unknown> }
-export interface TerminalState { ready: boolean; body: boolean; visible: boolean; locked: boolean; suspended: boolean; dnd: boolean }
+export interface TerminalState { ready: boolean; body: boolean; visible: boolean; locked: boolean; suspended: boolean; screen_off?: boolean; dnd: boolean }
 export function pairing(value: unknown): Pairing {
   const p = value as Partial<Pairing> | null;
   if (!p || p.v !== VERSION || typeof p.url !== 'string' || typeof p.ca !== 'string'

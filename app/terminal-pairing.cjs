@@ -5,6 +5,9 @@ const { join } = require('node:path');
 exports.install = ({ app, ipcMain, core, userData, window: getWindow, open }) => {
   const file = join(userData, 'pairing.encrypted');
   let lastPort = null;
+  const power = { locked: false, suspended: false, screen_off: false };
+  let sleeping = false, lidClosed = false;
+  const publishPower = () => core.send({ type: 'terminal:state', state: { ...power, suspended: sleeping || lidClosed } });
   const allowed = (event) => { const win = getWindow(); if (!win || event.sender !== win.webContents || event.senderFrame !== win.webContents.mainFrame) return false; try { return new URL(event.senderFrame.url).origin === `http://127.0.0.1:${core.port}`; } catch { return false; } };
   const load = () => {
     if (!existsSync(file)) return;
@@ -26,6 +29,7 @@ exports.install = ({ app, ipcMain, core, userData, window: getWindow, open }) =>
     if (!result.canceled) importFile(result.filePaths[0]);
   });
   core.on('ready', () => {
+    publishPower();
     // A paired backend sends a second ready when its device-isolated UI is ready.
     if (lastPort !== null) { lastPort = core.port; return; }
     lastPort = core.port;
@@ -35,6 +39,23 @@ exports.install = ({ app, ipcMain, core, userData, window: getWindow, open }) =>
   core.on('state', (state) => { if (['starting','restarting','stopped','failed'].includes(state)) lastPort = null; });
   app.on('second-instance', (_, argv) => { try { argument(argv); } catch { /* Existing pairing survives a rejected import. */ } open('#/home'); });
   app.whenReady().then(() => {
-    for (const [event, state] of [['lock-screen', { locked: true }], ['unlock-screen', { locked: false }], ['suspend', { suspended: true }], ['resume', { suspended: false }]]) powerMonitor.on(event, () => core.send({ type: 'terminal:state', state }));
+    const locked = () => powerMonitor.getSystemIdleState(1) === 'locked';
+    power.locked = locked(); publishPower();
+    const handlers = [
+      ['lock-screen', () => { power.locked = true; publishPower(); }],
+      ['unlock-screen', () => { power.locked = false; publishPower(); }],
+      ['suspend', () => { sleeping = true; publishPower(); }],
+      ['resume', () => { sleeping = false; power.locked = locked(); publishPower(); }],
+    ];
+    for (const [event, handler] of handlers) powerMonitor.on(event, handler);
+    let stopDisplay = () => {};
+    try { stopDisplay = require('./terminal-power.cjs').watchDisplayPower((delta) => {
+      if ('lid_closed' in delta) lidClosed = delta.lid_closed;
+      if ('screen_off' in delta) power.screen_off = delta.screen_off;
+      publishPower();
+    }); } catch (error) { console.warn('Display power observation unavailable:', error.message); }
+    const poll = setInterval(() => { const value = locked(); if (value !== power.locked) { power.locked = value; publishPower(); } }, 5000);
+    poll.unref();
+    app.once('will-quit', () => { clearInterval(poll); stopDisplay(); for (const [event, handler] of handlers) powerMonitor.removeListener(event, handler); });
   });
 };

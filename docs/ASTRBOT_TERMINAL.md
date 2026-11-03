@@ -24,7 +24,9 @@ The original voice settings, custom interaction choices, typing key, figure impo
 
 ## Delivery and recovery
 
-QQ and desktop share the verified user's recent conversation and memory, while retaining the true source and reply destination. Passive replies stay on the input terminal. Proactive interaction prefers a visible, interactive desktop. Hidden, locked, suspended or quiet state waits instead of sending the same interaction on QQ.
+QQ and desktop share the verified user's recent conversation and memory, while retaining the true source and reply destination. Passive replies stay on the input terminal. Proactive interaction prefers a reachable, visible desktop. Version 0.3.3 reports Windows session display power and closed-lid notifications alongside lock/suspend state; these unavailable states use QQ for new proactive interactions. Explicit do-not-disturb still waits across both terminals. A lost application heartbeat expires server priority after 45 seconds; reconnection refreshes current state.
+
+Chat messages and body interactions display their original event dates and times above the content, using the timezone synchronized from AstrBot. The full timestamp is available on hover; missing or invalid historical times are omitted.
 
 Requests and results have durable identities. Displayed speech waits for its renderer receipt; interrupted or unconfirmed actions remain unknown and are not blindly replayed. Paused/offline chat survives restart in the native pending journal and WSS outbox. Server-queued input is recoverable; already delivered input is not regenerated. Observation acknowledgements clear pending transport state without pretending to be new human dialogue.
 

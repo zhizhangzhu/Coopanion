@@ -108,6 +108,21 @@ async function mountChat() {
   return { root, socket: sockets[0], ring: root.querySelector('.chat-ctx') };
 }
 
+it('shows original event times above user, bot and body interaction messages', async () => {
+  status = statusAt(0);
+  const { root, socket } = await mountChat();
+  const times = ['2026-11-02T23:59:00+08:00','2026-11-03T10:17:56+08:00','2026-11-03T10:18:01+08:00'];
+  socket.frame({t:'init',bot:'Sample',items:[
+    {kind:'user',cursor:1,ts:times[0],via:'chat',text:'Yesterday'},
+    {kind:'say',cursor:2,ts:times[1],beats:[{text:'A reply'}]},
+    {kind:'touch',cursor:3,ts:times[2],text:'A pat'},
+  ],phase:{state:'idle',running:[]}});
+  expect([...root.querySelectorAll('time.chat-time')].map(e=>e.dateTime)).toEqual(times.map(ts=>new Date(ts).toISOString()));
+  expect(root.querySelector('.msg-user').firstChild.tagName).toBe('TIME');
+  expect(root.querySelector('.coo-body').firstChild.tagName).toBe('TIME');
+  expect(root.querySelector('.chat-note').firstChild.tagName).toBe('TIME');
+});
+
 it('fills with the reported count and spins while the earlier conversation is tidied up', async () => {
   const full = contextGauge(statusAt(0)).handoffAt;
   status = statusAt(Math.round(full / 4));

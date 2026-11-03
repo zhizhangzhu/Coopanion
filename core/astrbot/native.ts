@@ -30,7 +30,7 @@ export async function createNativeTerminal(options: NativeTerminalOptions) {
   let online = false, error = '', selected: Pairing | null = null, binding: Record<string, unknown> = {};
   let identity: Record<string, unknown> = {}, identityAt = 0;
   let directory = '', language: Language = options.language ?? 'en';
-  const nativeState: TerminalState = { ready: true, body: false, visible: false, locked: false, suspended: false, dnd: false };
+  const nativeState: TerminalState = { ready: true, body: false, visible: false, locked: false, suspended: false, screen_off: false, dnd: false };
   const state = (): TerminalState => { const body = pet?.petState(); return { ...nativeState, dnd: bot?.core.bus.isPaused() ?? nativeState.dnd, body: body?.connected === true, visible: body?.onDesktop === true }; };
   const status = () => ({ online, error, paired: selected !== null, server: selected ? new URL(selected.url).origin : '', binding, identity, state: state() });
   const service: WorldDefinition<WorldSection> = {

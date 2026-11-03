@@ -16,7 +16,7 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const env = { ...process.env, CORTICO_COMPANION_DATA: data, COOPANION_SYSTEM_LANGUAGE: 'en' };
 const executable = path.join(install, 'AstrBot Desktop Pet.exe');
 const deadline = setTimeout(() => { console.error('Windows acceptance deadline'); process.exit(2); }, 240000);
-const run = (file, args) => { const child = spawn(file, args, { env, stdio: 'ignore' }); children.push(child); return child; };
+const run = (file, args, log) => { const fd = log ? fs.openSync(log,'w') : null; const child = spawn(file, args, { env, stdio: fd === null ? 'ignore' : ['ignore','ignore',fd] }); if (fd !== null) fs.closeSync(fd); children.push(child); return child; };
 async function wait(check, label, attempts = 80) { for (let i = 0; i < attempts; i++) { try { const value = await check(); if (value) return value; } catch {} await delay(250); } throw Error(label); }
 async function main() {
   if (process.platform !== 'win32') throw Error('Windows acceptance requires Windows');
@@ -63,8 +63,10 @@ async function main() {
   // Silent installers may launch the app. Stop only this isolated installation before pairing it.
   const terminate = () => spawnSync('powershell.exe', ['-NoProfile','-Command', `$p='${executable.replaceAll("'", "''")}'; Get-CimInstance Win32_Process | Where-Object {$_.ExecutablePath -eq $p} | ForEach-Object {Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue}`], { stdio: 'ignore' });
   terminate();
-  appProcess = run(executable, ['--remote-debugging-port=54832', '--remote-debugging-address=127.0.0.1', '--pairing-file', pair]);
+  const nativeLog = path.join(root,'native-main.err');
+  appProcess = run(executable, ['--remote-debugging-port=54832', '--remote-debugging-address=127.0.0.1', '--pairing-file', pair], nativeLog);
   await wait(() => revision && observedState.ready, 'WSS pairing failed', 160);
+  if (fs.readFileSync(nativeLog,'utf8').includes('Display power observation unavailable')) throw Error('Windows display/lid observation did not start');
   run(executable, []); // Original shell opens its settings on a second launch.
   const target = await wait(async () => (await (await fetch('http://127.0.0.1:54832/json')).json()).find((tab) => tab.url.includes('/coopanion/')), 'Original console did not open', 120);
   debuggerSocket = new WebSocket(target.webSocketDebuggerUrl); await once(debuggerSocket, 'open');
@@ -83,6 +85,7 @@ async function main() {
   await evaluate('document.querySelector(".chatview form").requestSubmit()');
   await wait(() => receipt?.status === 'completed', 'Presentation was not confirmed', 160);
   await wait(() => evaluate('document.querySelector(".chat-thread").textContent.includes("Windows native reply received.")'), 'Chat reply missing');
+  await wait(() => evaluate('document.querySelectorAll(".chat-thread time[datetime]").length>=2'), 'Message timestamps missing');
   await wait(() => evaluate('[...document.querySelectorAll(".chat-thread .chat-avatar img")].some(img=>img.complete && img.naturalWidth>0)'), 'QQ avatar did not render');
 
   const method = (name) => evaluate(`fetch('/api/webui/providers/world%3Adesktop-pet/panels/pet/${name}',{method:'POST',headers:{'Content-Type':'application/json'},body:'{"args":[]}'}).then(r=>r.json())`);
@@ -96,7 +99,7 @@ async function main() {
   const again = run(path.resolve('dist', installer), ['/S', '/D='+install]); const [reinstalled] = await once(again, 'exit');
   if (reinstalled !== 0 || !fs.readFileSync(pairingFile).equals(preserved)) throw Error('Reinstall replaced pairing');
   terminate();
-  fs.writeFileSync(path.join(output, 'acceptance.json'), JSON.stringify({ installer: 'passed', original_ui: 'passed', wss_pairing: 'passed', chat_and_receipt: 'passed', body_png_gif_receipt: 'passed', qq_avatar: 'passed', hide_restore: 'passed', reinstall_preserves_pairing: 'passed' }, null, 2));
+  fs.writeFileSync(path.join(output, 'acceptance.json'), JSON.stringify({ installer: 'passed', original_ui: 'passed', wss_pairing: 'passed', chat_and_receipt: 'passed', body_png_gif_receipt: 'passed', qq_avatar: 'passed', message_times: 'passed', windows_power_observer: 'passed', hide_restore: 'passed', reinstall_preserves_pairing: 'passed' }, null, 2));
   console.log('Windows installer and native UI acceptance passed.');
 }
 main().then(() => { clearTimeout(deadline); socket?.close(); server?.close(); process.exit(0); }).catch((error) => { console.error(error.message); clearTimeout(deadline); debuggerSocket?.close(); socket?.close(); server?.close(); for (const child of children) child.kill(); process.exit(1); });

@@ -279,3 +279,5 @@ The DeepSeek Whale artwork (the textures under `packages/cortico-world-desktop-p
 The AstrBot edition displays the paired Bot name and user address as read-only server values; edit shared identity in AstrBot.
 
 The AstrBot terminal synchronizes the paired QQ Bot avatar, shows server receipt status separately from local waiting, and displays image and GIF replies in both the chat page and the body bubble. Shared identity and avatar remain server-managed. Unsupported action markers do not create bubbles; actions inside paired titles and quotes keep the phrase together.
+
+Version 0.3.3 shows original message dates and times. Windows display-off, closed-lid, lock and suspend states relinquish proactive priority to QQ; explicit do-not-disturb still applies to both terminals. Application heartbeats keep reachability current without model calls.

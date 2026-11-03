@@ -23,6 +23,7 @@ import { intro } from '../intro.ts';
 import { requestMode } from '../mode.ts';
 import { contextGauge, contextRing, type ContextGauge, type ContextStatus } from './context.ts';
 import { S, STEP } from './strings.ts';
+import { chatTime } from './time.ts';
 import { S as INPUT_TEXT } from '../../base/ui/strings.ts';
 
 const PET_PAGE = 'world:desktop-pet';
@@ -86,6 +87,7 @@ async function mount(ctx: PageContext): Promise<void> {
   const pending = new Map<number, UserItem>();
   const accepted = new Set<number>();
   let avatarRevision = "";
+  let timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   /** Messages that never reached the bot. */
   const discarded = new Set<number>();
   /** Withdrawn messages and where waiting messages were delivered, from the history loaded so far; applied to earlier pages. */
@@ -201,8 +203,17 @@ async function mount(ctx: PageContext): Promise<void> {
     return pic;
   };
 
+  const appendTime = (parent: HTMLElement, ts: string): void => {
+    const value = chatTime(ts, LANGUAGE, timeZone);
+    if (!value) return;
+    const time = doc.createElement('time'); time.className = 'chat-time';
+    time.dateTime = value.iso; time.title = value.full; time.textContent = value.label;
+    parent.append(time);
+  };
+
   const userNode = (it: UserItem): HTMLElement => {
     const el = ui.h('div', 'msg-user');
+    appendTime(el, it.ts);
     for (const img of it.images ?? []) el.append(thumb(img));
     if (it.text) el.append(ui.h('div', 'bubble', it.text));
     if (it.via === 'voice') el.append(ui.h('span', 'via', S.voice));
@@ -293,10 +304,15 @@ async function mount(ctx: PageContext): Promise<void> {
     };
     for (const it of shown) {
       if (it.kind === 'user') { group = null; thread.append(userNode(it)); continue; }
-      if (it.kind === 'touch') { group = null; thread.append(ui.h('div', 'chat-note', it.touch ? S.touch(it.touch, bot) : it.text ?? '')); continue; }
-      if (it.kind === 'figure') { group = null; thread.append(ui.h('div', 'chat-note', S.figure(it.figure.kind, localName(it.figure.name), bot))); continue; }
+      if (it.kind === 'touch' || it.kind === 'figure') {
+        group = null;
+        const note = ui.h('div', 'chat-note'); appendTime(note, it.ts);
+        note.append(doc.createTextNode(it.kind === 'touch' ? (it.touch ? S.touch(it.touch, bot) : it.text ?? '') : S.figure(it.figure.kind, localName(it.figure.name), bot)));
+        thread.append(note); continue;
+      }
       if (it.kind === 'say') {
         const body = cooBody();
+        appendTime(body, it.ts);
         for (const beat of it.beats) {
           const row = ui.h('div', 'sayrow');
           const said = ui.h('div', 'pet-bubble say');
@@ -306,7 +322,7 @@ async function mount(ctx: PageContext): Promise<void> {
           body.append(row);
         }
         for (const img of it.images ?? []) body.append(thumb(img));
-      } else if (it.kind === 'ask') cooBody().append(askNode(it, it.askId === openAsk));
+      } else if (it.kind === 'ask') { const body = cooBody(); appendTime(body, it.ts); body.append(askNode(it, it.askId === openAsk)); }
       else if (it.kind === 'activity' && shownSteps(it.steps).length) cooBody().append(activityNode(String(it.cursor), shownSteps(it.steps), S.seconds(Math.max(1, Math.round(it.ms / 1000))), false));
     }
     const liveSteps = live ? shownSteps(live.steps) : [];
@@ -371,7 +387,9 @@ async function mount(ctx: PageContext): Promise<void> {
     const refreshAvatar = async (): Promise<void> => {
       if (doc.hidden) return;
       try {
-        const status = await get<{ astrbot?: { identity?: { avatar_revision?: string } } }>('/api/status', { signal: ctx.signal });
+        const status = await get<{ astrbot?: { identity?: { avatar_revision?: string; timezone?: string } } }>('/api/status', { signal: ctx.signal });
+        const zone = status.astrbot?.identity?.timezone;
+        if (zone && zone !== timeZone) { timeZone = zone; render(); }
         const revision = status.astrbot?.identity?.avatar_revision;
         if (revision && revision !== avatarRevision) { avatarRevision = revision; for (const img of thread.querySelectorAll<HTMLImageElement>('.chat-avatar img')) img.src = AVATAR_URL+'?v='+revision; }
       } catch { /* Keep the last image while disconnected. */ }

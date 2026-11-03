@@ -31,6 +31,7 @@ export class TerminalConnection {
   private catalogAt = 0;
   private catalogDirty = true;
   private lastError = '';
+  private serverSeen = 0;
   private readonly requests = new Map<string, { resolve: (value: Record<string, unknown>) => void; reject: (reason: Error) => void; timer: ReturnType<typeof setTimeout> }>();
   private readonly controllers = new Map<string, AbortController>();
   private readonly journal: Journal;
@@ -150,6 +151,7 @@ export class TerminalConnection {
   }
   private async receive(message: Frame, socket: WebSocket): Promise<void> {
     if (this.socket !== socket) return;
+    this.serverSeen = Date.now();
     if (message.type === 'welcome') {
       if (message.payload.device_id !== this.pair.device_id) throw new Error('device_binding_mismatch');
       this.delegate.binding?.(message.payload);
@@ -162,7 +164,10 @@ export class TerminalConnection {
       await this.refresh();
       if (!this.welcomed || this.stopped || this.socket !== socket) return;
       for (const event of this.journal.events) this.send(event);
-      this.heartbeat = setInterval(() => { this.send(frame('ping', randomUUID(), {})); void this.refresh(); }, 20000);
+      this.heartbeat = setInterval(() => {
+        if (Date.now() - this.serverSeen > 45000) { socket.terminate(); return; }
+        this.send(frame('ping', randomUUID(), { state: this.delegate.state() })); void this.refresh();
+      }, 20000);
       this.delegate.connected?.(true);
     } else if (message.type === 'query_result' || message.type === 'cognition_result') {
       const pending = this.requests.get(message.id);
@@ -195,7 +200,7 @@ export class TerminalConnection {
       const p = message.payload;
       const state = this.delegate.state();
       if (typeof p.expires_at !== 'number' || p.expires_at * 1000 < Date.now() || p.revision !== this.revision
-          || !state.ready || state.locked || state.suspended) {
+          || !state.ready || state.locked || state.suspended || state.screen_off) {
         this.send(frame('result', message.id, { status: 'failed', text: 'expired_or_unavailable' }));
         return;
       }
